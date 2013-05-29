@@ -1,6 +1,10 @@
 using UnityEngine;
 using System.Collections;
 
+/// <summary>
+/// mz_get
+/// last edit 2013-5-29.
+/// </summary>
 public class Mz_SmartDeviceInput : MonoBehaviour {
 	
 	/// <summary>
@@ -12,30 +16,22 @@ public class Mz_SmartDeviceInput : MonoBehaviour {
 			return;		
 		}
 
-		if(Input.touchCount >= 1)
-        {
+		if(Input.touchCount >= 1) {
             Touch touch = Input.GetTouch(0);
             Ray cursorRay = Camera.main.ScreenPointToRay(touch.position);
             RaycastHit hit;
+            Debug.DrawRay(cursorRay.origin, cursorRay.direction, Color.red);
 
             if (touch.phase == TouchPhase.Began) {
                 if (Physics.Raycast(cursorRay, out hit)) {
                     hit.collider.SendMessage("OnTouchBegan", SendMessageOptions.DontRequireReceiver);
                 }
             }
-
-			if (touch.phase == TouchPhase.Stationary) {
-				if( Physics.Raycast(cursorRay, out hit)) {
-					hit.collider.gameObject.SendMessage("OnMouseOver", SendMessageOptions.DontRequireReceiver);
-				}
-			}
 			
             if(touch.phase == TouchPhase.Ended) {
 				if(Physics.Raycast(cursorRay, out hit)) {
 					hit.collider.SendMessage("OnTouchEnded", SendMessageOptions.DontRequireReceiver);
 				}	
-
-				return;
 			}
 			
 			if(touch.phase == TouchPhase.Moved) {
@@ -43,8 +39,6 @@ public class Mz_SmartDeviceInput : MonoBehaviour {
 					hit.collider.SendMessage("OnTouchDrag", SendMessageOptions.DontRequireReceiver);
 				}
 			}
-        
-            Debug.DrawRay(cursorRay.origin, cursorRay.direction, Color.red);
 		}
 	}	
     

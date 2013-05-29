@@ -3,7 +3,20 @@ using System;
 using System.Collections;
 
 public class MainMenu : Mz_BaseScene {
-
+	
+	private static MainMenu _Instance;
+	public new static MainMenu GetInstance {
+		get{
+			if(_Instance == null) {
+				GameObject main = GameObject.FindGameObjectWithTag("GameController");
+				_Instance = main.GetComponent<MainMenu>();
+			}
+			
+			return _Instance;
+		}
+	}
+	
+	
     public GameObject cloud_Obj;
     public GameObject baseBuilding_Obj;
     public GameObject movingCloud_Objs;
@@ -20,13 +33,26 @@ public class MainMenu : Mz_BaseScene {
     {
         if (activeState)
         {
-            plane_darkShadow.active = true;
+            plane_darkShadow.SetActive(true);
             iTween.MoveTo(optionsManager.selectLanguage_Obj, iTween.Hash("y", 10f, "islocal", true, "time", 1f, "easetype", iTween.EaseType.easeOutBounce));
         }
         else
         {
-            plane_darkShadow.active = false;
+            plane_darkShadow.SetActive(false);
             iTween.MoveTo(optionsManager.selectLanguage_Obj, iTween.Hash("y", 200f, "islocal", true, "time", 1f, "easetype", iTween.EaseType.easeOutBounce));
+        }
+    }
+	
+    public TK_news tknewsManager;	
+    internal void SetActivateTKNews(bool activeState) {
+        if (activeState) {
+            plane_darkShadow.SetActive(true);
+            iTween.MoveTo(tknewsManager.gameObject, iTween.Hash("y", 0f, "islocal", true, "time", 1f, "oncomplete", "ShakeFacebookButton", "oncompletetarget", tknewsManager.gameObject, "easetype", iTween.EaseType.easeOutBounce));
+        }
+        else {
+            plane_darkShadow.SetActive(false);
+            tknewsManager.StopShakeFacebookButton();
+            iTween.MoveTo(tknewsManager.gameObject, iTween.Hash("y", 200f, "islocal", true, "time", 1f, "easetype", iTween.EaseType.easeOutBounce));
         }
     }
         
@@ -75,19 +101,6 @@ public class MainMenu : Mz_BaseScene {
 	float group_width = 400;
 	Rect showSaveGameSlot_GroupRect;
     Rect slot_1Rect, slot_2Rect, slot_3Rect;
-
-	#region <@-- Events Data.
-
-	internal static bool _HasNewGameEvent = false;
-	public event EventHandler NewGame_event;
-	void OnNewGameEvent (EventArgs e)
-	{
-		if(NewGame_event != null) {
-			NewGame_event(this, e);
-		}
-	}
-
-	#endregion
 	
 	// Use this for initialization
 	void Start () {
@@ -109,11 +122,9 @@ public class MainMenu : Mz_BaseScene {
         back_button.gameObject.active = false;
 		
         iTween.MoveTo(flyingBird_group, iTween.Hash("x", 190f, "time", 16f, "easetype", iTween.EaseType.easeInSine, "looptype", iTween.LoopType.loop));
-		iTween.MoveTo(movingCloud_Objs, iTween.Hash("x", -200f, "time", 16f, "easetype", iTween.EaseType.easeInOutSine, "looptype", iTween.LoopType.pingPong)); 
+		iTween.MoveTo(movingCloud_Objs, iTween.Hash("x", -200f, "time", 16f, "easetype", iTween.EaseType.easeInOutSine, "looptype", iTween.LoopType.pingPong));
 
-		//<@-- Add new game eventhandle. 
-		_HasNewGameEvent = false;
-		this.NewGame_event += Handle_NewGame_event;
+        Mz_StorageManage._HasNewGameEvent = false;
 	}
 	
 	protected IEnumerator PreparingAudio ()
@@ -376,10 +387,7 @@ public class MainMenu : Mz_BaseScene {
         PlayerPrefs.SetInt(Mz_StorageManage.SaveSlot + Mz_StorageManage.KEY_ACCOUNTBALANCE, 0);
 		PlayerPrefs.SetInt(Mz_StorageManage.SaveSlot +  Mz_StorageManage.KEY_SHOP_LOGO, initializeNewShop.currentLogoID);
 		PlayerPrefs.SetString(Mz_StorageManage.SaveSlot + Mz_StorageManage.KEY_SHOP_LOGO_COLOR , initializeNewShop.currentLogoColor);
-        // <@-- Initialize can sell goods.
-        int[] IdOfCanSellItem = new int[] { 3, 12, 22, 23 };
-        PlayerPrefsX.SetIntArray(Mz_StorageManage.SaveSlot + Mz_StorageManage.KEY_CANSELLGOODSLIST, IdOfCanSellItem);
-
+  
 		PlayerPrefs.SetInt(Mz_StorageManage.SaveSlot + Mz_StorageManage.KEY_ROOF_ID, 255);
 		PlayerPrefs.SetInt(Mz_StorageManage.SaveSlot + Mz_StorageManage.KEY_AWNING_ID, 255);
 		PlayerPrefs.SetInt(Mz_StorageManage.SaveSlot + Mz_StorageManage.KEY_TABLE_ID, 255);
@@ -413,12 +421,14 @@ public class MainMenu : Mz_BaseScene {
 		PlayerPrefsX.SetIntArray(Mz_StorageManage.SaveSlot + Mz_StorageManage.KEY_CAN_DECORATE_ACCESSORIES_LIST, accessories_temp_array);
 
         // <@-- Initailizing pet data.
-        PlayerPrefs.SetInt(Mz_StorageManage.SaveSlot + ExtendsStorageManager.KEY_PET_ID, 0);
+        PlayerPrefs.SetInt(Mz_StorageManage.SaveSlot + ExtendsSaveManager.KEY_PET_ID, 0);
         int[] defaultPetAliment_id = new int[] { 0 };
-        PlayerPrefsX.SetIntArray(Mz_StorageManage.SaveSlot + ExtendsStorageManager.KEY_CAN_ALIMENT_PET_LIST, defaultPetAliment_id);
+        PlayerPrefsX.SetIntArray(Mz_StorageManage.SaveSlot + ExtendsSaveManager.KEY_CAN_ALIMENT_PET_LIST, defaultPetAliment_id);
 		
 		//<!-- Notice user to upgrade them shop.
-		PlayerPrefsX.SetBool(Mz_StorageManage.SaveSlot + Mz_StorageManage.KEY_NOTICE_USER_TO_UPGRADE, false);
+        PlayerPrefsX.SetBool(Mz_StorageManage.SaveSlot + Mz_StorageManage.KEY_NOTICE_USER_TO_UPGRADE, false);
+        //<!-- Force User to play tutor before.
+        PlayerPrefsX.SetBool(Mz_StorageManage.SaveSlot + Mz_StorageManage.KEY_IS_USER_PLAY_TUTOR, true);
 
         Debug.Log("Store new player data complete.");
 
@@ -430,9 +440,10 @@ public class MainMenu : Mz_BaseScene {
     private void LoadSceneTarget() {
         if(Application.isLoadingLevel == false) {
 			Town.newGameStartup_Event += Town.Handle_NewGameStartupEvent;
-
+			
+			_Instance = null;
 			Mz_LoadingScreen.LoadSceneName = Mz_BaseScene.SceneNames.Town.ToString();
-			Application.LoadLevel(Mz_BaseScene.SceneNames.LoadingScene.ToString());					
+			Application.LoadLevel(Mz_BaseScene.SceneNames.LoadingScene.ToString());		
 		}
     }
 
@@ -568,11 +579,17 @@ public class MainMenu : Mz_BaseScene {
                 StartCoroutine(this.ReInitializeAudioClipData());
                 this.SetActivateGUIOptionsGroup(false);
                 break;
+            case "Up_button":
+                tknewsManager.MoveUpPage();
+                break;
+            case "Down_button":
+                tknewsManager.MoveDownPage();
+                break;
             default:
                 break;
         }
 
-        if(mainmenu_Group.gameObject.active) {
+        if(mainmenu_Group.gameObject.activeSelf) {
             if (nameInput == createNewShop_button.name) {
                 //<!-- SceneState.showNewShop -->
                 StartCoroutine(ShowCreateNewShop());
@@ -611,7 +628,6 @@ public class MainMenu : Mz_BaseScene {
 				if(shopName != "") {
                     this.characterAnimationManager.RandomPlayGoodAnimation();
                     audioEffect.PlayOnecWithOutStop(audioEffect.correct_Clip);
-					OnNewGameEvent(EventArgs.Empty);
                 	this.SaveNewPlayer();
 				}
                 else{
@@ -643,11 +659,6 @@ public class MainMenu : Mz_BaseScene {
 				initializeNewShop.HaveChangeLogoColor("Yellow");
 			}
         }
-    }
-
-    void Handle_NewGame_event (object sender, EventArgs e)
-    {
-		_HasNewGameEvent = true;
     }
 
     private IEnumerator ShowInitializeNewShop()

@@ -12,44 +12,48 @@ public class ObjectsBeh : Base_ObjectBeh {
     protected bool _isDropObject = false;
 	protected bool _canActive = false;	
     internal Vector3 originalPosition;
+    internal Vector3 originalScale;
 
     #region <!-- Events data.
 
     /// <summary>
     /// destroyObj_Event.
     /// </summary>	
-	private event System.EventHandler destroyObj_Event;
+	internal event System.EventHandler destroyObj_Event;
     protected void OnDestroyObject_event(System.EventArgs e) {
         if (destroyObj_Event != null)
         {
             destroyObj_Event(this, e);
-            baseScene.audioEffect.PlayOnecWithOutStop(baseScene.soundEffect_clips[1]);
-
             Debug.Log(destroyObj_Event + ": destroyObj_Event : " + this.name);
         }
     }
-    internal System.EventHandler ObjectsBeh_destroyObj_Event;
 
     #endregion
+
+	internal void SetOriginTransform(Vector3 newOriginPos, Vector3 newOriginalScale) {
+		this.originalPosition = newOriginPos;
+        this.originalScale = newOriginalScale;
+	}
 
     protected virtual void Awake()
     {
         GameObject sceneObj = GameObject.FindGameObjectWithTag("GameController");
         baseScene = sceneObj.GetComponent<Mz_BaseScene>();
 
-		try {
-			sprite = this.gameObject.GetComponent<tk2dSprite>();
-			animatedSprite = this.gameObject.GetComponent<tk2dAnimatedSprite>();
-		}
-		catch { }
+        try
+        {
+            sprite = this.gameObject.GetComponent<tk2dSprite>();
+            animatedSprite = this.gameObject.GetComponent<tk2dAnimatedSprite>();
+        }
+        catch { }
+        finally { }
 	}
-	
-	// Use this for initialization
-	protected virtual void Start () {		
-		this.originalPosition = this.transform.position;
 
-        destroyObj_Event += new System.EventHandler(ObjectsBeh_destroyObj_Event);
-	}
+    protected override void Start()
+    {
+        base.Start();
+        this.SetOriginTransform(this.transform.localPosition, this.transform.localScale);
+    }
 	
 	protected virtual void ImplementDraggableObject() {
         Vector3 screenPoint;
@@ -61,7 +65,7 @@ public class ObjectsBeh : Base_ObjectBeh {
             screenPoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         }
 
-        this.transform.position = new Vector3(screenPoint.x, screenPoint.y, -8f);
+        this.transform.position = new Vector3(screenPoint.x, screenPoint.y, -20f);
 	}
 	
 	// Update is called once per frame
@@ -73,12 +77,18 @@ public class ObjectsBeh : Base_ObjectBeh {
 			if(_isDraggable) {
 				this.ImplementDraggableObject();
 			}
-
-            if (baseScene.touch.phase == TouchPhase.Ended || baseScene.touch.phase == TouchPhase.Canceled)
-            {			
+			
+#if !UNITY_EDITOR && (UNITY_IOS || UNITY_ANDROID)
+            if (baseScene.touch.phase == TouchPhase.Ended || baseScene.touch.phase == TouchPhase.Canceled) {			
 				if(this._isDraggable)
 					_isDropObject = true;
 			}
+#elif UNITY_EDITOR
+			if(Input.GetMouseButtonUp(0)) {
+				if(this._isDraggable)
+					_isDropObject = true;
+			}
+#endif
 		}
 	}
 	

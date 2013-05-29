@@ -20,17 +20,48 @@ public class ShopTutor {
     public TutorStatus currentTutorState;
 };
 
-public class SushiShop : Mz_BaseScene {
+public class Shop : Mz_BaseScene {
 	
-	public const string WarningMessageToSeeManual = "Please see a manual if you don't known how to make a food";
+	/// <summary>
+	/// The Singleton for one instance of this.
+	/// </summary>
+	private static Shop instance;
+	public static Shop Instance { 
+		get {
+			if(instance == null) {
+				GameObject main = GameObject.FindGameObjectWithTag("GameController");
+				instance = main.GetComponent<Shop>();
+			}	
+			
+			return instance; 
+		}
+	}
+
+    public const string WarningMessageToSeeManual = "Please see a manual if you don't known how to make a food";
+	
+	private const string BASE_ORDER_ITEM_NORMAL = "Order_BaseItem";
+	private const string BASE_ORDER_ITEM_COMPLETE = "Order_BaseItem_complete";
 
 	public Transform shop_background;
     public GameObject bakeryShop_backgroup_group;
+	public ShopTutor shopTutor;
     public ExtendAudioDescribeData audioDescriptionData = new ExtendAudioDescribeData();
 	public CharacterAnimationManager TK_animationManager;
+	public GoodsFactory goodFactory;
+    public GameObject freshyFreeze_obj;
+	public IngredientController ingredientController;
+	public IcecreamTankBeh icecreamTank;
+    public NaperyBeh napery;
+    public ManualBeh manualManager;
+    public GlassLockerBeh glassLockerBeh;
+    public OvenBeh overBeh;
+	public Mz_CalculatorBeh calculatorBeh;
 	public tk2dSprite shopLogo_sprite;
-	public GoodDataStore goodDataStore;
-	public static List<int> NumberOfCansellItem = new List<int>(GoodDataStore.FoodDatabaseCapacity);
+    public GoodDataStore goodDataStore;
+    public BinBeh binBeh;
+    public GameObject foodsTray_obj;
+    internal FoodTrayBeh foodTrayBeh;
+	public static List<string> Name_Of_CanSellItem = new List<string>();
 	public List<Food> CanSellGoodLists = new List<Food>();
 	public AudioClip[] en_greeting_clip = new AudioClip[6];
     public AudioClip[] th_greeting_clip = new AudioClip[7];
@@ -38,9 +69,9 @@ public class SushiShop : Mz_BaseScene {
     public AudioClip[] thanksCustomer_clips = new AudioClip[2];
 	
 	//<!-- in game button.
-	public GameObject close_button;	
-	public GameObject billingMachine;
-	public tk2dSprite choppingBlock_sprite;
+	public GameObject close_button;
+    public GameObject billingMachine;
+    private GameObject packaging_obj_prefab;
     private tk2dAnimatedSprite billingAnimatedSprite;
 	private AnimationState billingMachine_animState;
 	private const string TH_001 = "TH_001";
@@ -57,10 +88,6 @@ public class SushiShop : Mz_BaseScene {
 	private const string EN_006 = "EN_006";
 	private const string EN_007 = "EN_007";
 	
-	//<!-- Miscellaneous game objects.	
-	public BinBeh binBeh;
-	public GameObject foodsTray_obj;
-    internal FoodTrayBeh foodTrayBeh;
     public GameObject calculator_group_instance;
     public GameObject receiptGUIForm_groupObj;
     public GameObject giveTheChangeGUIForm_groupObj;
@@ -71,28 +98,18 @@ public class SushiShop : Mz_BaseScene {
     public GameObject baseOrderUI_Obj;
 	public GameObject greetingMessage_ObjGroup;
 	public GameObject darkShadowPlane;
-	public GameObject slidingDoorLeft;
-	public GameObject slidingDoorRight;
+	public GameObject slidingDoor;
 	
 	public GameObject[] arr_addNotations = new GameObject[2];
 	public GameObject[] arr_goodsLabel = new GameObject[3];
 	public tk2dSprite[] arr_GoodsTag = new tk2dSprite[3];
 	public tk2dTextMesh[] arr_GoodsPrice_textmesh = new tk2dTextMesh[3];
     public tk2dSprite[] arr_orderingBaseItems = new tk2dSprite[3];
-	private const string BASE_ORDER_ITEM_NORMAL = "Order_BaseItem";
-	private const string BASE_ORDER_ITEM_COMPLETE = "Order_BaseItem_complete";
     public tk2dSprite[] arr_orderingItems = new tk2dSprite[3];
 
-    public static bool _CanCreateFoodBeltMachine = false;
-    public BeltMachineBeh beltMachine;
-    public ManualBeh manualManager;
-    private SushiProduction sushiProduction;
-    private InstantFoodManager instantfoodManager = null;
-	private Mz_CalculatorBeh calculatorBeh;
     private GameObject cash_obj;
 	private tk2dSprite cash_sprite;
-    private GameObject packaging_Obj;
-	public ShopTutor shopTutor;
+    private GameObject packagingInstance;
 
     //<!-- Core data
     public enum GamePlayState { 
@@ -108,20 +125,13 @@ public class SushiShop : Mz_BaseScene {
 	};
     public GamePlayState currentGamePlayState;
 
-	public GameObject hotTeapot_obj;
-	public GameObject soupTank_obj;
-	public GameObject icedBreaker_obj;
-	public GameObject icecreamTank_obj;
-	public GameObject icedTeaTank_obj;
-	public GameObject beltMachine_obj;
-	public GameObject pickles;
-	public GameObject flyingFishRoe;
-	public GameObject roe;
-
 	// <!-- Customer data group.
     public GameObject customerMenu_group_Obj;
     internal CustomerBeh currentCustomer;
 
+    #region <!-- Event handle data.
+
+    //<!-- Create new customer event.
     public event EventHandler nullCustomer_event;
     private void OnNullCustomer_event(EventArgs e) {
         if(nullCustomer_event != null) {
@@ -130,7 +140,7 @@ public class SushiShop : Mz_BaseScene {
 			Debug.Log("Callback :: nullCustomer_event");
         }
     }
-    
+
     //<!-- Manage goods complete Event handle.
     public event System.EventHandler manageGoodsComplete_event;
     private void OnManageGoodComplete(System.EventArgs e)
@@ -138,71 +148,85 @@ public class SushiShop : Mz_BaseScene {
         if (manageGoodsComplete_event != null)
             manageGoodsComplete_event(this, e);
     }
-	
-	
-	// Use this for initialization
+    
+    //<!-- Have new item in can sell goods list.
+    private event EventHandler<NewItemEventArgs> haveNewItem_event;
+    private void OnHaveNewItem_event(NewItemEventArgs e)
+    {
+        var handler = haveNewItem_event;
+        if (handler != null)
+            handler(null, e);
+    }
+    public static List<int> NewItem_IDs = new List<int>();
+    public class NewItemEventArgs : EventArgs
+    {
+        public int item_id;
+    };
+
+
+    #endregion
+
+    // Use this for initialization
 	IEnumerator Start () {				
+        foodTrayBeh = ScriptableObject.CreateInstance<FoodTrayBeh>();
+        goodDataStore = new GoodDataStore();
+        napery = ScriptableObject.CreateInstance<NaperyBeh>();
+		goodFactory = GoodsFactory.Instance;
+        calculator_group_instance.SetActive(false);
+		manualManager.manualCookbook.SetActive(false);
+
+		if(ingredientController == null) {
+			this.ingredientController = this.gameObject.GetComponent<IngredientController>();
+		}
+		if(icecreamTank == null)
+			Debug.LogError("IcecreamTankBeh is null plase assingn icecreamTank variable");
+		
         yield return StartCoroutine(this.InitailizeSceneObject());
 
+        overBeh.gameObject.SetActive(true);
         this.OpenShop();
 	}
 
     private IEnumerator InitailizeSceneObject()
-    {
-        Mz_ResizeScale.ResizingScale(shop_background);
+    {	
+		StartCoroutine_Auto(this.InitializeExternalfactor());
+		StartCoroutine_Auto(this.InitializeCanSellGoodslist());
+		// Debug can sell list.
+        Debug.Log("CanSellGoodLists.Count : " + CanSellGoodLists.Count + " :: " + "NumberOfCansellItem.Count : " + Name_Of_CanSellItem.Count);
 
-        foodTrayBeh = new FoodTrayBeh();
-        goodDataStore = new GoodDataStore();
-        calculator_group_instance.SetActiveRecursively(false);
-        sushiProduction = this.GetComponent<SushiProduction>();
-        instantfoodManager = this.GetComponent<InstantFoodManager>();
-		choppingBlock_sprite.spriteId = choppingBlock_sprite.GetSpriteIdByName("choppingBlock");		
+		yield return null;
 
-        StartCoroutine_Auto(this.InitializeExternalfactor());
-
-        // Debug can sell list.
-        StartCoroutine_Auto(this.InitializeCanSellGoodslist());
-        Debug.Log("CanSellGoodLists.Count : " + CanSellGoodLists.Count + " :: " + "NumberOfCansellItem.Count : " + NumberOfCansellItem.Count);
-		yield return StartCoroutine_Auto(this.CreateInstantFoodObject());
-
-		close_button.active = true;
+		close_button.SetActive(true);
     }
 
     private IEnumerator InitializeExternalfactor()
     {
-        StartCoroutine(this.ChangeShopLogoIcon());
-        StartCoroutine(this.InitailizeShopLabelGUI());
-        StartCoroutine(this.InitializeGameEffect());
+        StartCoroutine_Auto(this.ChangeShopLogoIcon());
+        StartCoroutine_Auto(this.InitailizeShopLabelGUI());
+        StartCoroutine_Auto(this.InitializeGameEffect());
 		StartCoroutine_Auto(this.ReInitializeAudioClipData());
-        StartCoroutine(this.SceneInitializeAudio());
-        StartCoroutine(this.InitializeObjectAnimation());
+        StartCoroutine_Auto(this.SceneInitializeAudio());
+        StartCoroutine_Auto(this.InitializeObjectAnimation());
 
-        yield return 0;
-    }
-
-    private IEnumerator CreateInstantFoodObject()
-    {
-        StartCoroutine_Auto(instantfoodManager.Create_InstantFoodObject());
+        packaging_obj_prefab = Resources.Load(Const_info.Packages_ResourcePath + "Packages_Sprite", typeof(GameObject)) as GameObject;
 
         yield return 0;
     }
 
     private void OpenShop() 
     {
-        iTween.MoveTo(slidingDoorLeft, iTween.Hash("position", new Vector3(-225f, 0f, 1), "islocal", true, "time", 1f, "easetype", iTween.EaseType.easeInSine));
-        iTween.MoveTo(slidingDoorRight, iTween.Hash("position", new Vector3(225f, 0f, 1), "islocal", true, "time", 1f, "easetype", iTween.EaseType.easeInSine));
-		
-        audioEffect.PlayOnecSound(base.soundEffect_clips[0]);
+		audioEffect.PlayOnecSound(base.soundEffect_clips[0]);
+		iTween.MoveTo(slidingDoor, iTween.Hash("position", new Vector3(0, 200, -20), "islocal", true, "time", 1f, "easetype", iTween.EaseType.linear));
 				
-        nullCustomer_event += new EventHandler(Handle_nullCustomer_event);
+        nullCustomer_event += Handle_nullCustomer_event;
 		OnNullCustomer_event(EventArgs.Empty);
-		
-		if(MainMenu._HasNewGameEvent == false) {
+
+        if (Mz_StorageManage._HasNewGameEvent == false) {
 			Destroy(shopTutor.greeting_textmesh);
 			shopTutor = null;
 		}
     }
-   
+    
 	private IEnumerator SceneInitializeAudio()
 	{
         base.InitializeAudio();
@@ -217,7 +241,7 @@ public class SushiShop : Mz_BaseScene {
 
     private const string PATH_OF_DYNAMIC_CLIP = "AudioClips/GameIntroduce/Shop/";
     private const string PATH_OF_MERCHANDISC_CLIP = "AudioClips/AudioDescribe/";
-    private const string PATH_OD_APOLOGIZE_CLIP = "AudioClips/ApologizeClips/";
+    private const string PATH_OF_APOLOGIZE_CLIP = "AudioClips/ApologizeClips/";
     private const string PATH_OF_APPRECIATE_CLIP = "AudioClips/AppreciateClips/";
     private const string PATH_OF_THANKS_CLIP = "AudioClips/ThanksClips/";
 	private const string PATH_OF_NOTIFICATION_CLIP = "AudioClips/Notifications/";
@@ -237,20 +261,14 @@ public class SushiShop : Mz_BaseScene {
             description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "TH_noticeUserToUpgrade", typeof(AudioClip)) as AudioClip);
 			description_clips.Add(Resources.Load(PATH_OF_NOTIFICATION_CLIP + "TH_NoticePlayerToSeeManual", typeof(AudioClip)) as AudioClip);
 
-            apologize_clip[0] = Resources.Load(PATH_OD_APOLOGIZE_CLIP + "TH_shortSorry_0001", typeof(AudioClip)) as AudioClip;
-            apologize_clip[1] = Resources.Load(PATH_OD_APOLOGIZE_CLIP + "TH_shortSorry_0002", typeof(AudioClip)) as AudioClip;
-            apologize_clip[2] = Resources.Load(PATH_OD_APOLOGIZE_CLIP + "TH_longSorry_0001", typeof(AudioClip)) as AudioClip;
-            apologize_clip[3] = Resources.Load(PATH_OD_APOLOGIZE_CLIP + "TH_longSorry_0002", typeof(AudioClip)) as AudioClip;
-            apologize_clip[4] = Resources.Load(PATH_OD_APOLOGIZE_CLIP + "TH_longSorry_0003", typeof(AudioClip)) as AudioClip;
+            apologize_clip[0] = Resources.Load(PATH_OF_APOLOGIZE_CLIP + "TH_shortSorry_0001", typeof(AudioClip)) as AudioClip;
+            apologize_clip[1] = Resources.Load(PATH_OF_APOLOGIZE_CLIP + "TH_shortSorry_0002", typeof(AudioClip)) as AudioClip;
+            apologize_clip[2] = Resources.Load(PATH_OF_APOLOGIZE_CLIP + "TH_longSorry_0001", typeof(AudioClip)) as AudioClip;
+            apologize_clip[3] = Resources.Load(PATH_OF_APOLOGIZE_CLIP + "TH_longSorry_0002", typeof(AudioClip)) as AudioClip;
+            apologize_clip[4] = Resources.Load(PATH_OF_APOLOGIZE_CLIP + "TH_longSorry_0003", typeof(AudioClip)) as AudioClip;
 
             thanksCustomer_clips[0] = Resources.Load(PATH_OF_THANKS_CLIP + "TH_Thank_0001", typeof(AudioClip)) as AudioClip;
             thanksCustomer_clips[1] = Resources.Load(PATH_OF_THANKS_CLIP + "TH_Thank_0002", typeof(AudioClip)) as AudioClip;
-
-            //			appreciate_clips[0] = Resources.Load(PATH_OF_APPRECIATE_CLIP + "EN_appreciate_001", typeof(AudioClip)) as AudioClip;
-            //			appreciate_clips[1] = Resources.Load(PATH_OF_APPRECIATE_CLIP + "EN_appreciate_002", typeof(AudioClip)) as AudioClip;
-            //			appreciate_clips[2] = Resources.Load(PATH_OF_APPRECIATE_CLIP + "EN_appreciate_003", typeof(AudioClip)) as AudioClip;
-            //			appreciate_clips[3] = Resources.Load(PATH_OF_APPRECIATE_CLIP + "EN_appreciate_004", typeof(AudioClip)) as AudioClip;
-            //			appreciate_clips[4] = Resources.Load(PATH_OF_APPRECIATE_CLIP + "EN_appreciate_005", typeof(AudioClip)) as AudioClip;
         }
         else if (Main.Mz_AppLanguage.appLanguage == Main.Mz_AppLanguage.SupportLanguage.EN)
         {
@@ -265,20 +283,14 @@ public class SushiShop : Mz_BaseScene {
 			description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "EN_noticeUserToUpgrade", typeof(AudioClip)) as AudioClip);
 			description_clips.Add(Resources.Load(PATH_OF_NOTIFICATION_CLIP + "EN_NoticePlayerToSeeManual", typeof(AudioClip)) as AudioClip);
 			
-			apologize_clip[0] = Resources.Load(PATH_OD_APOLOGIZE_CLIP + "EN_shortSorry_0001", typeof(AudioClip)) as AudioClip;
-            apologize_clip[1] = Resources.Load(PATH_OD_APOLOGIZE_CLIP + "EN_shortSorry_0002", typeof(AudioClip)) as AudioClip;
-            apologize_clip[2] = Resources.Load(PATH_OD_APOLOGIZE_CLIP + "EN_longSorry_0001", typeof(AudioClip)) as AudioClip;
-            apologize_clip[3] = Resources.Load(PATH_OD_APOLOGIZE_CLIP + "EN_longSorry_0002", typeof(AudioClip)) as AudioClip;
-            apologize_clip[4] = Resources.Load(PATH_OD_APOLOGIZE_CLIP + "EN_longSorry_0003", typeof(AudioClip)) as AudioClip;
+			apologize_clip[0] = Resources.Load(PATH_OF_APOLOGIZE_CLIP + "EN_shortSorry_0001", typeof(AudioClip)) as AudioClip;
+            apologize_clip[1] = Resources.Load(PATH_OF_APOLOGIZE_CLIP + "EN_shortSorry_0002", typeof(AudioClip)) as AudioClip;
+            apologize_clip[2] = Resources.Load(PATH_OF_APOLOGIZE_CLIP + "EN_longSorry_0001", typeof(AudioClip)) as AudioClip;
+            apologize_clip[3] = Resources.Load(PATH_OF_APOLOGIZE_CLIP + "EN_longSorry_0002", typeof(AudioClip)) as AudioClip;
+            apologize_clip[4] = Resources.Load(PATH_OF_APOLOGIZE_CLIP + "EN_longSorry_0003", typeof(AudioClip)) as AudioClip;
 
             thanksCustomer_clips[0] = Resources.Load(PATH_OF_THANKS_CLIP + "EN_Thank_0001", typeof(AudioClip)) as AudioClip;
             thanksCustomer_clips[1] = Resources.Load(PATH_OF_THANKS_CLIP + "EN_Thank_0002", typeof(AudioClip)) as AudioClip;
-
-//			appreciate_clips[0] = Resources.Load(PATH_OF_APPRECIATE_CLIP + "EN_appreciate_001", typeof(AudioClip)) as AudioClip;
-//			appreciate_clips[1] = Resources.Load(PATH_OF_APPRECIATE_CLIP + "EN_appreciate_002", typeof(AudioClip)) as AudioClip;
-//			appreciate_clips[2] = Resources.Load(PATH_OF_APPRECIATE_CLIP + "EN_appreciate_003", typeof(AudioClip)) as AudioClip;
-//			appreciate_clips[3] = Resources.Load(PATH_OF_APPRECIATE_CLIP + "EN_appreciate_004", typeof(AudioClip)) as AudioClip;
-//			appreciate_clips[4] = Resources.Load(PATH_OF_APPRECIATE_CLIP + "EN_appreciate_005", typeof(AudioClip)) as AudioClip;
         }
 
         this.ReInitializingMerchandiseNameAudio();
@@ -288,20 +300,22 @@ public class SushiShop : Mz_BaseScene {
 
     private void ReInitializingMerchandiseNameAudio()
     {
-        audioDescriptionData.merchandiseNameDescribes = new AudioClip[GoodDataStore.FoodDatabaseCapacity];
+        audioDescriptionData.merchandiseNameDescribes = new AudioClip[goodDataStore.dict_FoodDatabase.Count];
 
         if (Main.Mz_AppLanguage.appLanguage == Main.Mz_AppLanguage.SupportLanguage.EN)
         {
-            for (int i = 0; i < GoodDataStore.FoodDatabaseCapacity; i++)
+            for (int i = 0; i < goodDataStore.dict_FoodDatabase.Count; i++)
             {
-                audioDescriptionData.merchandiseNameDescribes[i] = Resources.Load(PATH_OF_MERCHANDISC_CLIP + "EN/" + goodDataStore.FoodDatabase_list[i].name, typeof(AudioClip)) as AudioClip;
+                GoodDataStore.FoodMenuList foodName = (GoodDataStore.FoodMenuList)i;
+                audioDescriptionData.merchandiseNameDescribes[i] = Resources.Load(PATH_OF_MERCHANDISC_CLIP + "EN/" + foodName.ToString(), typeof(AudioClip)) as AudioClip;
             }
         }
         else if (Main.Mz_AppLanguage.appLanguage == Main.Mz_AppLanguage.SupportLanguage.TH)
         {
-			for (int i = 0; i < GoodDataStore.FoodDatabaseCapacity; i++)
+			for (int i = 0; i < goodDataStore.dict_FoodDatabase.Count; i++)
             {
-                audioDescriptionData.merchandiseNameDescribes[i] = Resources.Load(PATH_OF_MERCHANDISC_CLIP + "TH/" + goodDataStore.FoodDatabase_list[i].name, typeof(AudioClip)) as AudioClip;
+                GoodDataStore.FoodMenuList foodName = (GoodDataStore.FoodMenuList)i;
+                audioDescriptionData.merchandiseNameDescribes[i] = Resources.Load(PATH_OF_MERCHANDISC_CLIP + "TH/" + foodName.ToString(), typeof(AudioClip)) as AudioClip;
             }
         }
     }
@@ -348,49 +362,166 @@ public class SushiShop : Mz_BaseScene {
 	private IEnumerator InitializeCanSellGoodslist()
 	{
 		if(Mz_StorageManage.Username == string.Empty) {
-			SushiShop.NumberOfCansellItem.Clear();
-			for (int i = 0; i < GoodDataStore.FoodDatabaseCapacity; i++)
-			{
-				SushiShop.NumberOfCansellItem.Add(i);
+            // init name of can sell item list.
+			Shop.Name_Of_CanSellItem.Clear();
+			foreach (string item in goodDataStore.dict_FoodDatabase.Keys) {
+				Shop.Name_Of_CanSellItem.Add(item);
 			}
 			base.extendsStorageManager.SaveCanSellGoodListData();
+            // Init list of can purchased item.
+            ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Clear();
+            foreach (string item in UpgradeInsideManager.page1_spriteNames) {
+                ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Add(item);
+            }
+            foreach (string item in UpgradeInsideManager.page2_spriteNames) {
+                ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Add(item);
+            }
+
+            StartCoroutine_Auto(this.icecreamTank.IE_SetActiveIcecreamBlock());
 		}
-		
-		if(SushiShop.NumberOfCansellItem.Count == 0)
-			base.extendsStorageManager.LoadCanSellGoodsListData();		
-		
+		else if(Shop.Name_Of_CanSellItem.Count == 0)
+			base.extendsStorageManager.LoadCanSellGoodsListData();
+
+        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[0].name))
+        {
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Strawberry_ChocolateSundae.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Strawberry_ChocolateSundae.ToString());
+
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Strawberry_StrawberrySundae.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Strawberry_StrawberrySundae.ToString());
+        }
+        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[1].name))
+        {
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Chocolate_ChocolateSundae.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Chocolate_ChocolateSundae.ToString());
+
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Chocolate_StrawberrySundae.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Chocolate_StrawberrySundae.ToString());
+        }
+        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[2].name))
+        {
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Vanilla_ChocolateSundae.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Vanilla_ChocolateSundae.ToString());
+
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Vanilla_StrawberrySundae.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Vanilla_StrawberrySundae.ToString());
+        }
+        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[3].name))
+        {
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Mint_ChocolateSundae.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Mint_ChocolateSundae.ToString());
+
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Mint_StrawberrySundae.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Mint_StrawberrySundae.ToString());
+        }
+        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[4].name))
+        {
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Greentea_ChocolateSundae.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Greentea_ChocolateSundae.ToString());
+
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Greentea_StrawberrySundae.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Greentea_StrawberrySundae.ToString());
+        }
+        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[5].name))
+        {
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Lemon_ChocolateSundae.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Lemon_ChocolateSundae.ToString());
+
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Lemon_StrawberrySundae.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Lemon_StrawberrySundae.ToString());
+        }
+        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[6].name))
+        {
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.ChocolateChip_ChocolateSundae.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.ChocolateChip_ChocolateSundae.ToString());
+
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.ChocolateChip_StrawberrySundae.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.ChocolateChip_StrawberrySundae.ToString());
+        }
+        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[7].name))
+        {
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Orange_ChocolateSundae.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Orange_ChocolateSundae.ToString());
+
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Orange_StrawberrySundae.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Orange_StrawberrySundae.ToString());
+        }
+        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[8].name))
+        {
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Coffee_ChocolateSundae.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Coffee_ChocolateSundae.ToString());
+
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Coffee_StrawberrySundae.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Coffee_StrawberrySundae.ToString());
+        }
+        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[9].name))
+        {
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.BringCherry_ChocolateSundae.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.BringCherry_ChocolateSundae.ToString());
+
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.BringCherry_StrawberrySundae.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.BringCherry_StrawberrySundae.ToString());
+        }
+		if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains ("ColaTank")) {
+            ingredientController.cola.gameObject.SetActive(true);
+            if (!Name_Of_CanSellItem.Contains (GoodDataStore.FoodMenuList.Cola.ToString())) {
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Cola.ToString());	
+			}
+		}
+        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains("FruitPunchTank")) {
+            ingredientController.fruitPunch.gameObject.SetActive(true);
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.FruitPunch.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.FruitPunch.ToString());
+        }
+        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains("StrawberryMilkShakeTank")) {
+            ingredientController.strawberryMillShake.gameObject.SetActive(true);
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.StrawberryMilkShake.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.StrawberryMilkShake.ToString());
+        }
+        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains("BananaTopping")) {
+            ingredientController.banana.gameObject.SetActive(true);
+            //if(Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.ba))
+        }
+        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains("FreshyFreezeIcecream")) {
+            freshyFreeze_obj.SetActive(true);
+
+			if (!Name_Of_CanSellItem.Contains (GoodDataStore.FoodMenuList.FreshyFreeze_C_blueberry.ToString())) 
+				Name_Of_CanSellItem.Add (GoodDataStore.FoodMenuList.FreshyFreeze_C_blueberry.ToString());
+			if(!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.FreshyFreeze_C_cherry.ToString()))
+				Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.FreshyFreeze_C_cherry.ToString());
+            if(!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.FreshyFreeze_C_dragonfruit.ToString())) 
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.FreshyFreeze_C_dragonfruit.ToString());
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.FreshyFreeze_C_kiwi.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.FreshyFreeze_C_kiwi.ToString());
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.FreshyFreeze_C_mango.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.FreshyFreeze_C_mango.ToString());
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.FreshyFreeze_C_strawberry.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.FreshyFreeze_C_strawberry.ToString());
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.FreshyFreeze_S_blueberry.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.FreshyFreeze_S_blueberry.ToString());
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.FreshyFreeze_S_cherry.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.FreshyFreeze_S_cherry.ToString());
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.FreshyFreeze_S_dragonfruit.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.FreshyFreeze_S_dragonfruit.ToString());
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.FreshyFreeze_S_kiwi.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.FreshyFreeze_S_kiwi.ToString());
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.FreshyFreeze_S_mango.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.FreshyFreeze_S_mango.ToString());
+            if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.FreshyFreeze_S_strawberry.ToString()))
+                Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.FreshyFreeze_S_strawberry.ToString());
+        }
+
 		yield return new WaitForFixedUpdate();
 		
-		foreach (int id in NumberOfCansellItem)
+		foreach (string item_name in Name_Of_CanSellItem)
 		{
-			CanSellGoodLists.Add(goodDataStore.FoodDatabase_list[id]);
+			//<!- old methodlogy to get can sell item name form enum of item.
+//            GoodDataStore.FoodMenuList key_name = (GoodDataStore.FoodMenuList)id;			
+//            CanSellGoodLists.Add(goodDataStore.dict_FoodDatabase[key_name.ToString()]);
+			
+			//<!- new methodlogy get can sell item name form associative array(dict).			
+            CanSellGoodLists.Add(goodDataStore.dict_FoodDatabase[item_name]);
 		}
-
-		if(NumberOfCansellItem.Contains((int)GoodDataStore.FoodMenuList.Miso_soup)) {
-			soupTank_obj.gameObject.SetActiveRecursively(true);
-		}
-		if(NumberOfCansellItem.Contains((int)GoodDataStore.FoodMenuList.Bean_ice_jam_on_crunching)) {
-			icedBreaker_obj.gameObject.SetActiveRecursively(true);
-		}
-		if(NumberOfCansellItem.Contains((int)GoodDataStore.FoodMenuList.GreenTea_icecream)) {
-			icecreamTank_obj.gameObject.SetActiveRecursively(true);
-		}
-		if(NumberOfCansellItem.Contains((int)GoodDataStore.FoodMenuList.Iced_greenTea)) {
-			icedTeaTank_obj.gameObject.SetActiveRecursively(true);
-		}
-		if(NumberOfCansellItem.Contains((int)GoodDataStore.FoodMenuList.Pickling_cucumber_filled_maki))
-			pickles.SetActiveRecursively(true);
-		if(NumberOfCansellItem.Contains((int)GoodDataStore.FoodMenuList.Prawn_brown_maki))
-			flyingFishRoe.SetActiveRecursively(true);
-		if(NumberOfCansellItem.Contains((int)GoodDataStore.FoodMenuList.Roe_maki)) 
-			roe.SetActiveRecursively(true);
-        if(NumberOfCansellItem.Contains((int)GoodDataStore.FoodMenuList.Ramen) ||
-            NumberOfCansellItem.Contains((int)GoodDataStore.FoodMenuList.Yaki_soba) ||
-            NumberOfCansellItem.Contains((int)GoodDataStore.FoodMenuList.Zaru_soba) ||
-            NumberOfCansellItem.Contains((int)GoodDataStore.FoodMenuList.Curry_with_rice) ||
-            NumberOfCansellItem.Contains((int)GoodDataStore.FoodMenuList.Tempura)) {
-            beltMachine_obj.gameObject.SetActiveRecursively(true);
-        }
 	}
 
 	#region <!-- Tutor systems.
@@ -417,8 +548,9 @@ public class SushiShop : Mz_BaseScene {
 
 	void CreateGreetingCustomerTutorEvent()
     {
-		shopTutor.greeting_textSprite.active = false;
-        shopTutor.greeting_textmesh.active = true;
+        greetingMessage_ObjGroup.transform.position += Vector3.forward * 10;
+		shopTutor.greeting_textSprite.SetActive(false);
+        shopTutor.greeting_textmesh.SetActive(true);
 
         tutorDescriptions[0].GetComponent<tk2dTextMesh>().text = "GREETING";
         tutorDescriptions[0].GetComponent<tk2dTextMesh>().Commit();
@@ -429,7 +561,7 @@ public class SushiShop : Mz_BaseScene {
 	void CreateAcceptOrdersTutorEvent ()
     {
 		this.SetActivateTotorObject(true);
-		shopTutor.goaway_button_obj.active = false;
+		shopTutor.goaway_button_obj.SetActive(false);
 //		darkShadowPlane.transform.position += Vector3.forward * 3;
 		
 		handTutor.transform.localPosition = new Vector3(-62f, -13f, 3f);
@@ -440,7 +572,7 @@ public class SushiShop : Mz_BaseScene {
 		//<@-- Animated hand with tweening.
         iTween.MoveTo(handTutor.gameObject, iTween.Hash("y", -20f, "Time", .5f, "easetype", iTween.EaseType.easeInSine, "looptype", iTween.LoopType.pingPong));
 		
-		if(_isPlayAcceptOuderSound == false)
+		if(_isPlayAcceptOrderSound == false)
 			StartCoroutine(this.WaitForHelloCustomer());
 	}
 
@@ -448,11 +580,21 @@ public class SushiShop : Mz_BaseScene {
 	{
 		base.SetActivateTotorObject(true);
 
-		hotTeapot_obj.transform.position += Vector3.back * 7;
+		overBeh.transform.position += Vector3.back * 28f;
 
-        handTutor.transform.localPosition = new Vector3(-104f, 13f, 3f);		
-		tutorDescriptions[0].transform.localPosition = new Vector3(-90f, 13f, 3f);
-		tutorDescriptions[0].GetComponent<tk2dTextMesh>().text = "TAP";
+        handTutor.transform.localPosition = new Vector3(82f, 16f, 3f);		
+		tutorDescriptions[0].transform.localPosition = new Vector3(6f, 30f, 3f);
+		tutorDescriptions[0].GetComponent<tk2dTextMesh>().text = "TAP TO OPEN";
+		tutorDescriptions[0].GetComponent<tk2dTextMesh>().Commit();
+		//<@-- Animated hand with tweening.
+		iTween.MoveTo(handTutor.gameObject, iTween.Hash("y", 23f, "Time", .5f, "easetype", iTween.EaseType.easeInSine, "looptype", iTween.LoopType.pingPong));
+	}
+
+	public void TapToCreateGoods_TutorEvent ()
+	{
+        handTutor.transform.localPosition = new Vector3(82f, 16f, 3f);		
+		tutorDescriptions[0].transform.localPosition = new Vector3(6f, 30f, 3f);
+		tutorDescriptions[0].GetComponent<tk2dTextMesh>().text = "TAP TO SELECT ONCE !";
 		tutorDescriptions[0].GetComponent<tk2dTextMesh>().Commit();
 		//<@-- Animated hand with tweening.
 		iTween.MoveTo(handTutor.gameObject, iTween.Hash("y", 23f, "Time", .5f, "easetype", iTween.EaseType.easeInSine, "looptype", iTween.LoopType.pingPong));
@@ -461,27 +603,27 @@ public class SushiShop : Mz_BaseScene {
     internal void CreateDragGoodsToTrayTutorEvent()
     {
         Vector3 originalFoodTrayPos = foodsTray_obj.transform.position;
-		foodsTray_obj.transform.position = new Vector3(originalFoodTrayPos.x, originalFoodTrayPos.y, -7f);
+		foodsTray_obj.transform.position += new Vector3(0, 0, -12f);
 		audioDescribe.PlayOnecSound(description_clips[2]);
 
         base.SetActivateTotorObject(true);
 
-		handTutor.transform.localPosition = new Vector3(-81f, -50f, 3f);
+		handTutor.transform.localPosition = new Vector3(64.15f, 8.85f, 3f);
 		handTutor.transform.rotation = Quaternion.Euler(Vector3.zero);
 		tk2dSprite hand_sprite = handTutor.GetComponent<tk2dSprite>();
 		hand_sprite.spriteId = hand_sprite.GetSpriteIdByName("HandDragItem_tutor");
 
-        tutorDescriptions[0].transform.localPosition = new Vector3(-68f, -13f, 3f);
+        tutorDescriptions[0].transform.localPosition = new Vector3(20f, 30f, 3f);
         tutorDescriptions[0].GetComponent<tk2dTextMesh>().text = "DRAG GOODS TO TRAY";
 		tutorDescriptions[0].GetComponent<tk2dTextMesh>().Commit();
 		//<@-- Animated hand with tweening.
 		iTween.MoveTo(handTutor.gameObject, iTween.Hash("x", 0f, "y", -75f, "Time", 1f, "delay", 0.5f, "easetype", iTween.EaseType.easeInOutSine, "looptype", iTween.LoopType.loop));
     }
 	
-	private bool _isPlayAcceptOuderSound = false;
+	private bool _isPlayAcceptOrderSound = false;
     private IEnumerator WaitForHelloCustomer()
     {
-		_isPlayAcceptOuderSound = true;
+		_isPlayAcceptOrderSound = true;
 		
         yield return new WaitForSeconds(en_greeting_clip[0].length);
         audioDescribe.PlayOnecSound(description_clips[1]);
@@ -490,7 +632,7 @@ public class SushiShop : Mz_BaseScene {
     private void CreateCheckingAccuracyTutorEvent()
     {
         this.SetActivateTotorObject(true);
-        shopTutor.goaway_button_obj.active = false;
+        shopTutor.goaway_button_obj.SetActive(false);
         Vector3 originalFoodTrayPos = foodsTray_obj.transform.position;
 		foodsTray_obj.transform.position = new Vector3(originalFoodTrayPos.x, originalFoodTrayPos.y, -2f);
 
@@ -512,12 +654,12 @@ public class SushiShop : Mz_BaseScene {
         shopTutor.currentTutorState = ShopTutor.TutorStatus.Billing;
 
         base.SetActivateTotorObject(true);
-		darkShadowPlane.active = true;
-        billingMachine.transform.position += Vector3.back * 7f;
+		darkShadowPlane.SetActive(true);
+        billingMachine.transform.position += Vector3.back * 16f;
 
-        handTutor.transform.localPosition = new Vector3(-55f, 0f, 3f);
+        handTutor.transform.localPosition = new Vector3(32f, 0f, 3f);
 
-        tutorDescriptions[0].transform.localPosition = new Vector3(-40f, 0f, 3f);
+        tutorDescriptions[0].transform.localPosition = new Vector3(48f, 0f, 3f);
         tutorDescriptions[0].GetComponent<tk2dTextMesh>().text = "BILLING";
         tutorDescriptions[0].GetComponent<tk2dTextMesh>().Commit();
         //<@-- Animated hand with tweening.
@@ -525,6 +667,18 @@ public class SushiShop : Mz_BaseScene {
 
         audioDescribe.PlayOnecSound(description_clips[4]);
     }
+	
+	private void CreateNoticeUpgradeShopEvent ()
+	{
+		GameObject upgradeShop_button = Instantiate(Resources.Load("Tutor_Objs/NoticeUpgradeButton", typeof(GameObject))) as GameObject;
+		upgradeShop_button.transform.position = new Vector3(40f, -75f, -3.5f);
+		upgradeShop_button.name = "NoticeUpgradeButton";
+		
+		audioDescribe.PlayOnecSound(description_clips[8]);
+		
+		iTween.PunchScale(upgradeShop_button, 
+			iTween.Hash("amount", Vector3.one * 0.2f, "time", 1f, "easetype", iTween.EaseType.easeInSine, "looptype", iTween.LoopType.pingPong));
+	}
 
 	#endregion
 	
@@ -533,22 +687,23 @@ public class SushiShop : Mz_BaseScene {
 	/// Handle_nulls the customer_event.
 	/// </summary>
     private void Handle_nullCustomer_event(object sender, EventArgs e) {
-		if(MainMenu._HasNewGameEvent) {
+        if (Mz_StorageManage._HasNewGameEvent)
+        {
 			StartCoroutine(this.WaitForCreateCustomer());
-			close_button.gameObject.active = false;
+			close_button.gameObject.SetActive(false);
 		}
 		else {
 			StartCoroutine(CreateCustomer());
-			darkShadowPlane.active = false;
-			close_button.gameObject.active = true;
+			darkShadowPlane.SetActive(false);
+			close_button.gameObject.SetActive(true);
 		}
 	}
 	
 	IEnumerator WaitForCreateCustomer ()
 	{
 		yield return StartCoroutine(this.CreateCustomer());
-		darkShadowPlane.active = true;
-		darkShadowPlane.transform.position += Vector3.back * 2f;
+		darkShadowPlane.SetActive(true);
+//		darkShadowPlane.transform.position += Vector3.back * 2f;
 		this.CreateTutorObjectAtRuntime();
 		this.CreateGreetingCustomerTutorEvent();
 	}
@@ -565,17 +720,17 @@ public class SushiShop : Mz_BaseScene {
 			
 			currentCustomer.customerSprite_Obj = Instantiate(Resources.Load("Customers/Customer_AnimatedSprite", typeof(GameObject))) as GameObject;
 			currentCustomer.customerSprite_Obj.transform.parent = customerMenu_group_Obj.transform;
-			currentCustomer.customerSprite_Obj.transform.localPosition = new Vector3(-6f, -77f, -.1f);
+			currentCustomer.customerSprite_Obj.transform.localPosition = new Vector3(-6f, -77f, -1f);
 			
 			currentCustomer.customerOrderingIcon_Obj = Instantiate(Resources.Load("Customers/CustomerOrdering_icon", typeof(GameObject))) as GameObject;
 			currentCustomer.customerOrderingIcon_Obj.transform.parent = customerMenu_group_Obj.transform;
 			currentCustomer.customerOrderingIcon_Obj.transform.localPosition = new Vector3(35f, -60f, -2f);
 			currentCustomer.customerOrderingIcon_Obj.name = "OrderingIcon";
 			
-			currentCustomer.customerOrderingIcon_Obj.active = false;
+			currentCustomer.customerOrderingIcon_Obj.SetActive(false);
         }
 		else {
-			Debug.LogError("Current Cusstomer does not correct destroying..." + " :: " + currentCustomer);
+			Debug.LogWarning("Current Cusstomer does not correct destroying..." + " :: " + currentCustomer);
 		}
 
 		currentGamePlayState = GamePlayState.GreetingCustomer;
@@ -610,7 +765,7 @@ public class SushiShop : Mz_BaseScene {
         currentGamePlayState = GamePlayState.calculationPrice;
 
         TK_animationManager.PlayGoodAnimation();
-        currentCustomer.customerOrderingIcon_Obj.active = false;
+        currentCustomer.customerOrderingIcon_Obj.SetActive(false);
 
         StartCoroutine(this.ShowReceiptGUIForm());
     }
@@ -619,17 +774,18 @@ public class SushiShop : Mz_BaseScene {
     {
 		yield return new WaitForSeconds(0.5f);
 
-		darkShadowPlane.active = true;
+		darkShadowPlane.SetActive(true);
         
         audioEffect.PlayOnecSound(audioEffect.receiptCash_clip);
 		
 		this.CreateTKCalculator();
 		calculatorBeh.result_Textmesh = displayAnswer_textmesh;
-		receiptGUIForm_groupObj.SetActiveRecursively(true);
+		receiptGUIForm_groupObj.SetActive(true);
 		this.DeActiveCalculationPriceGUI();
 		this.ManageCalculationPriceGUI();
 
-        if(MainMenu._HasNewGameEvent) {
+        if (Mz_StorageManage._HasNewGameEvent)
+        {
             audioDescribe.PlayOnecSound(description_clips[5]);
         }
     }
@@ -637,22 +793,23 @@ public class SushiShop : Mz_BaseScene {
 	void DeActiveCalculationPriceGUI ()
 	{
 		for (int i = 0; i < arr_addNotations.Length; i++) {
-			arr_addNotations[i].active = false;
+			arr_addNotations[i].SetActive(false);
 		}
 		for (int i = 0; i < arr_goodsLabel.Length; i++) {
-			arr_goodsLabel[i].SetActiveRecursively(false);
+			arr_goodsLabel[i].SetActive(false);
 		}
 	}
 
 	void ManageCalculationPriceGUI ()
 	{		
 		for (int i = 0; i < currentCustomer.customerOrderRequire.Count; i++) {
-			arr_goodsLabel[i].SetActiveRecursively(true);
+			arr_goodsLabel[i].SetActive(true);
+			arr_GoodsTag[i].transform.localPosition = new Vector3(0, -9, -1);
 			arr_GoodsTag[i].spriteId = arr_GoodsTag[i].GetSpriteIdByName(currentCustomer.customerOrderRequire[i].food.name);
 			arr_GoodsPrice_textmesh[i].text = currentCustomer.customerOrderRequire[i].food.price.ToString();
 			arr_GoodsPrice_textmesh[i].Commit();
 			if(i != 0)
-				arr_addNotations[i - 1].active = true;
+				arr_addNotations[i - 1].SetActive(true);
 		}
 	}
 
@@ -660,11 +817,12 @@ public class SushiShop : Mz_BaseScene {
 	{
 		foreach (tk2dSprite item in arr_orderingBaseItems) {
 			item.spriteId = item.GetSpriteIdByName(BASE_ORDER_ITEM_NORMAL);
-			item.gameObject.SetActiveRecursively (false);
+			item.gameObject.SetActive(false);
 		}
 
 		for (int i = 0; i < currentCustomer.customerOrderRequire.Count; i++) {
-			arr_orderingBaseItems[i].gameObject.SetActiveRecursively(true);	
+			arr_orderingBaseItems[i].gameObject.SetActive(true);	
+			arr_orderingItems[i].transform.localPosition = new Vector3(0, -9, -1);
 			arr_orderingItems[i].spriteId = arr_orderingItems[i].GetSpriteIdByName(currentCustomer.customerOrderRequire[i].food.name);
             arr_orderingItems[i].gameObject.name = currentCustomer.customerOrderRequire[i].food.name;
 		}
@@ -675,9 +833,10 @@ public class SushiShop : Mz_BaseScene {
 
 	IEnumerator ShowOrderingGUI ()
 	{
-		if(MainMenu._HasNewGameEvent) {
+        if (Mz_StorageManage._HasNewGameEvent)
+        {
 			iTween.MoveTo(baseOrderUI_Obj.gameObject, 
-			              iTween.Hash("position", new Vector3(-85f, 6f, -2.5f), "islocal", true, "time", .5f, "easetype", iTween.EaseType.spring));
+			              iTween.Hash("position", new Vector3(-85f, 6f, -12f), "islocal", true, "time", .5f, "easetype", iTween.EaseType.spring));
 			
             if (shopTutor.currentTutorState == ShopTutor.TutorStatus.AcceptOrders) {
                 this.CreateAcceptOrdersTutorEvent();
@@ -689,7 +848,7 @@ public class SushiShop : Mz_BaseScene {
 		}
 		else {
 			iTween.MoveTo(baseOrderUI_Obj.gameObject, 
-		              iTween.Hash("position", new Vector3(-85f, 6f, -10f), "islocal", true, "time", .5f, "easetype", iTween.EaseType.spring));
+		              iTween.Hash("position", new Vector3(-85f, 6f, -12f), "islocal", true, "time", .5f, "easetype", iTween.EaseType.spring));
 		}
 
 		yield return new WaitForFixedUpdate();
@@ -700,13 +859,13 @@ public class SushiShop : Mz_BaseScene {
 		
 		foreach (var item in arr_orderingItems) {
 			iTween.Resume(item.gameObject);
-            iTween.MoveTo(item.gameObject, iTween.Hash("y", 10f, "islocal", true, "time", .3f, "looptype", iTween.LoopType.pingPong));
+            iTween.MoveTo(item.gameObject, iTween.Hash("y", 0f, "islocal", true, "time", .3f, "looptype", iTween.LoopType.pingPong));
 		}
 	}
 
 	IEnumerator CollapseOrderingGUI ()
 	{
-        if (MainMenu._HasNewGameEvent)
+        if (Mz_StorageManage._HasNewGameEvent)
         {
 			base.SetActivateTotorObject(false);
             
@@ -724,7 +883,7 @@ public class SushiShop : Mz_BaseScene {
 
                 if (currentCustomer)
                 {
-                    currentCustomer.customerOrderingIcon_Obj.active = true;
+                    currentCustomer.customerOrderingIcon_Obj.SetActive(true);
 
                     iTween.PunchPosition(currentCustomer.customerOrderingIcon_Obj,
                         iTween.Hash("x", 10f, "y", 10f, "delay", 1f, "time", .5f, "looptype", iTween.LoopType.pingPong));
@@ -757,10 +916,12 @@ public class SushiShop : Mz_BaseScene {
         }
 	}
 
-	private void SetActiveGreetingMessage (bool activeState)
+	void SetActiveGreetingMessage (bool activeState)
 	{
 		if(activeState) {
-			greetingMessage_ObjGroup.SetActiveRecursively(true);
+			greetingMessage_ObjGroup.SetActive(true);
+            greetingMessage_ObjGroup.transform.localPosition = new Vector3(0,0,-12);
+			plane_darkShadow.SetActive(true);
 			iTween.ScaleTo(greetingMessage_ObjGroup, iTween.Hash("x", 1f, "y", 1f, "time", 0.5f, "easetype", iTween.EaseType.easeInSine));
 		}
 		else {
@@ -770,9 +931,10 @@ public class SushiShop : Mz_BaseScene {
 	}
 	
 	void UnActiveGreetingMessage() {		
-		greetingMessage_ObjGroup.SetActiveRecursively(false);
-		
-		if(MainMenu._HasNewGameEvent) {
+		greetingMessage_ObjGroup.SetActive(false);
+
+        if (Mz_StorageManage._HasNewGameEvent)
+        {
 			currentCustomer.GenerateTutorGoodOrderEvent();
 		}
 		else
@@ -817,7 +979,7 @@ public class SushiShop : Mz_BaseScene {
     
     private void CreateTKCalculator() {
         if(calculator_group_instance) {
-            calculator_group_instance.SetActiveRecursively(true);
+            calculator_group_instance.SetActive(true);
 			
 			if(calculatorBeh == null) {
 				calculatorBeh = calculator_group_instance.GetComponent<Mz_CalculatorBeh>();
@@ -845,30 +1007,38 @@ public class SushiShop : Mz_BaseScene {
 				cash_sprite.spriteId = cash_sprite.GetSpriteIdByName("cash_50");
 				currentCustomer.payMoney = 50;
             }
-            else if(currentCustomer.amount <= 100) {
+            else if(currentCustomer.amount < 80) {
+                cash_sprite.spriteId = cash_sprite.GetSpriteIdByName("cash_80");
+                currentCustomer.payMoney = 80;
+            }
+            else if(currentCustomer.amount < 100) {
 				cash_sprite.spriteId = cash_sprite.GetSpriteIdByName("cash_100");
 				currentCustomer.payMoney = 100;
             }
+            else if(currentCustomer.amount <= 500) {
+                cash_sprite.spriteId = cash_sprite.GetSpriteIdByName("cash_500");
+                currentCustomer.payMoney = 500;
+            }
         }
 		
-		yield return new WaitForSeconds(3);
+		yield return new WaitForSeconds(2.5f);
 		
 		Destroy(cash_obj.gameObject);
-		calculator_group_instance.SetActiveRecursively(true);
+		calculator_group_instance.SetActive(true);
 		this.DeActiveCalculationPriceGUI();
 
 		this.ShowGiveTheChangeForm();
 		currentGamePlayState = GamePlayState.giveTheChange;
 
-        if(MainMenu._HasNewGameEvent) {
+        if (Mz_StorageManage._HasNewGameEvent)
+        {
             audioDescribe.PlayOnecSound(description_clips[6]);
         }
     }
 
-	void ShowGiveTheChangeForm ()
-	{
-        giveTheChangeGUIForm_groupObj.SetActiveRecursively(true);
-		darkShadowPlane.active = true;
+	void ShowGiveTheChangeForm () {
+        giveTheChangeGUIForm_groupObj.SetActive(true);
+		darkShadowPlane.SetActive(true);
 		
 		audioEffect.PlayOnecSound(audioEffect.giveTheChange_clip);
 
@@ -891,12 +1061,13 @@ public class SushiShop : Mz_BaseScene {
 
         StartCoroutine(this.PackagingGoods());
 
-        if(MainMenu._HasNewGameEvent) {
-            MainMenu._HasNewGameEvent = false;
+        if (Mz_StorageManage._HasNewGameEvent)
+        {
+            Mz_StorageManage._HasNewGameEvent = false;
 			Town.IntroduceGameUI_Event += Town.Handle_IntroduceGameUI_Event;
 			
             Destroy(shopTutor.greeting_textmesh);
-            shopTutor.goaway_button_obj.active = true;
+            shopTutor.goaway_button_obj.SetActive(true);
             shopTutor = null;
             darkShadowPlane.transform.position += Vector3.forward * 2f;
 
@@ -908,14 +1079,12 @@ public class SushiShop : Mz_BaseScene {
 		}
     }
 
-	private const string Packages_ResourcePath = "Packages/";
-
 	private IEnumerator PackagingGoods()
     {
-        if(packaging_Obj == null) {
-            packaging_Obj = Instantiate(Resources.Load(Packages_ResourcePath + "Packages_Sprite", typeof(GameObject))) as GameObject;
-            packaging_Obj.transform.parent = foodsTray_obj.transform;
-            packaging_Obj.transform.localPosition = new Vector3(0, 12f, -0.5f);
+        if(packagingInstance == null) {
+            packagingInstance = Instantiate(packaging_obj_prefab) as GameObject;
+            packagingInstance.transform.parent = foodsTray_obj.transform;
+            packagingInstance.transform.localPosition = new Vector3(0, 12f, -5f);
         }
 		
 		TK_animationManager.RandomPlayGoodAnimation();
@@ -936,9 +1105,14 @@ public class SushiShop : Mz_BaseScene {
         billingAnimatedSprite.animationCompleteDelegate = delegate(tk2dAnimatedSprite sprite, int clipId) {
 			billingAnimatedSprite.Play("Billing");
 		};
-
+		// Notice user to upgrade new item at bank. 
+		if(Mz_StorageManage._IsNoticeUser == false & Mz_StorageManage.AvailableMoney >= 350) {
+			Mz_StorageManage._IsNoticeUser = true;
+			
+			this.CreateNoticeUpgradeShopEvent();
+		}  
         //<!-- Clare resource data.
-		Destroy(packaging_Obj);
+		Destroy(packagingInstance);
 		StartCoroutine(ExpelCustomer());
     }
 
@@ -952,8 +1126,8 @@ public class SushiShop : Mz_BaseScene {
 	public override void OnInput(string nameInput)
 	{	
 		base.OnInput(nameInput);
-		
-		if(MainMenu._HasNewGameEvent) {
+
+        if (Mz_StorageManage._HasNewGameEvent) {
 			if(nameInput == "EN_001_textmesh") {
 				StartCoroutine(this.PlayGreetingAudioClip(en_greeting_clip[0]));
 //                base.SetActivateTotorObject(false);
@@ -975,8 +1149,7 @@ public class SushiShop : Mz_BaseScene {
 			}
 		}
 		
-		if (calculator_group_instance.active) 
-        {
+		if (calculator_group_instance.activeSelf) {
 			if(currentGamePlayState == GamePlayState.calculationPrice) {
 				if(nameInput == "ok_button") {
 					this.CallCheckAnswerOfTotalPrice();
@@ -993,8 +1166,7 @@ public class SushiShop : Mz_BaseScene {
 			calculatorBeh.GetInput(nameInput);
 		}
 
-		if(currentGamePlayState == GamePlayState.GreetingCustomer)
-        {
+		if(currentGamePlayState == GamePlayState.GreetingCustomer) {
             #region <@-- GamePlayState.GreetingCustomer.
 
             switch (nameInput)
@@ -1031,102 +1203,82 @@ public class SushiShop : Mz_BaseScene {
 
             #endregion
         }
-        else if (currentGamePlayState == GamePlayState.Ordering)
-        {
+        else if (currentGamePlayState == GamePlayState.Ordering) {
             #region <@-- GamePlayState.Ordering.
 
-            if (nameInput == GoodDataStore.FoodMenuList.Octopus_sushi.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Octopus_sushi]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Tempura.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Tempura]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Prawn_brown_maki.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Prawn_brown_maki]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Miso_soup.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Miso_soup]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Kimji.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Kimji]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Roe_maki.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Roe_maki]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Yaki_soba.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Yaki_soba]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Pickling_cucumber_filled_maki.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Pickling_cucumber_filled_maki]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Sweetened_egg_sushi.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Sweetened_egg_sushi]);
-            else if (nameInput == GoodDataStore.FoodMenuList.GreenTea_icecream.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.GreenTea_icecream]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Iced_greenTea.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Iced_greenTea]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Spicy_shell_sushi.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Spicy_shell_sushi]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Hot_greenTea.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Hot_greenTea]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Crab_sushi.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Crab_sushi]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Prawn_sushi.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Prawn_sushi]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Zaru_soba.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Zaru_soba]);
-            else if (nameInput == GoodDataStore.FoodMenuList.California_maki.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.California_maki]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Ramen.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Ramen]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Skipjack_tuna_sushi.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Skipjack_tuna_sushi]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Eel_sushi.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Eel_sushi]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Fatty_tuna_sushi.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Fatty_tuna_sushi]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Salmon_sushi.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Salmon_sushi]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Bean_ice_jam_on_crunching.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Bean_ice_jam_on_crunching]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Curry_with_rice.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Curry_with_rice]);
+            if (nameInput == GoodDataStore.FoodMenuList.Strawberry_ChocolateSundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Strawberry_ChocolateSundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Mint_StrawberrySundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Mint_StrawberrySundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Strawberry_StrawberrySundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Strawberry_StrawberrySundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Coffee_StrawberrySundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Coffee_StrawberrySundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Coffee_StrawberrySundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Coffee_StrawberrySundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Coffee_ChocolateSundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Coffee_ChocolateSundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Vanilla_StrawberrySundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Vanilla_StrawberrySundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Strawberry_StrawberrySundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Strawberry_StrawberrySundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.ChocolateChip_ChocolateSundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.ChocolateChip_ChocolateSundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Cola.ToString())
+                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Cola]);
+            else if (nameInput == GoodDataStore.FoodMenuList.StrawberryMilkShake.ToString())
+                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.StrawberryMilkShake]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Lemon_ChocolateSundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Lemon_ChocolateSundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.FruitPunch.ToString())
+                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.FruitPunch]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Greentea_ChocolateSundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Greentea_ChocolateSundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Chocolate_ChocolateSundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Chocolate_ChocolateSundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Lemon_StrawberrySundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Lemon_StrawberrySundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.ChocolateChip_StrawberrySundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.ChocolateChip_StrawberrySundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Greentea_StrawberrySundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Greentea_StrawberrySundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Mint_ChocolateSundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Mint_ChocolateSundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Orange_ChocolateSundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Orange_ChocolateSundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.BringCherry_ChocolateSundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.BringCherry_ChocolateSundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Vanilla_ChocolateSundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Vanilla_ChocolateSundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.IcecreamFloat.ToString())
+                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.IcecreamFloat]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Orange_StrawberrySundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Orange_StrawberrySundae]);
             else
             {
                 switch (nameInput)
                 {
-                    case "OK_button":
-                        StartCoroutine(this.CollapseOrderingGUI());
-                        break;
-                    case "Goaway_button":
-                        currentCustomer.PlayRampage_animation();
-                        StartCoroutine(this.ExpelCustomer());
-                        break;
-                    case "OrderingIcon": StartCoroutine(this.ShowOrderingGUI());
-                        break;
-                    default:
-                        break;
+				case "OK_button":
+					StartCoroutine(this.CollapseOrderingGUI());
+					break;
+				case "Goaway_button":
+					currentCustomer.PlayRampage_animation();
+					StartCoroutine(this.ExpelCustomer());
+					break;
+				case "OrderingIcon": StartCoroutine(this.ShowOrderingGUI());
+					break;
+				default:
+					break;
                 }
 
-				if(nameInput == SushiProduction.Crab_sushi_face || nameInput == SushiProduction.Eel_sushi_face ||
-				   nameInput == SushiProduction.Fatty_tuna_sushi_face || nameInput == SushiProduction.Octopus_sushi_face ||
-				   nameInput == SushiProduction.Prawn_sushi_face || nameInput == SushiProduction.Salmon_sushi_face ||
-				   nameInput == SushiProduction.Skipjack_tuna_sushi_face || nameInput == SushiProduction.Spicy_shell_sushi_face ||
-				   nameInput == SushiProduction.Sweetened_egg_sushi_face)
-				{
-					sushiProduction.OnInput(ref nameInput);
-                    return;
-				}
-				else if(nameInput == SushiProduction.SushiIngredientTray || nameInput == SushiProduction.ClosePopup || 
-					nameInput == SushiProduction.BucketOfRice || nameInput == SushiProduction.Alga ||
-					nameInput == SushiProduction.Pickles || nameInput == SushiProduction.FlyingFishRoe || nameInput == SushiProduction.Roe) 
-				{
-					sushiProduction.OnInput(ref nameInput);
-                    return;
-				}
-                else if (nameInput == BeltMachineBeh.BeltMachineObjectName) {
-                    beltMachine.HandleOnInput(ref nameInput);
-                    return;
-                }
-				else if (nameInput == manualManager.name) {
+				if (nameInput == manualManager.name) {
 					this.manualManager.OnActiveCookbook();
 					currentGamePlayState = GamePlayState.DisplayCookbook;
 					return;
                 }
 				else if(nameInput == billingMachine.name) {
-					if (MainMenu._HasNewGameEvent) {
+                    if (Mz_StorageManage._HasNewGameEvent)
+                    {
 						base.SetActivateTotorObject(false);
 					}
 					
@@ -1141,21 +1293,11 @@ public class SushiShop : Mz_BaseScene {
 					};	
 					CheckingUnityAnimationComplete.TargetAnimationComplete_event += handle;
 				}
-				else if (nameInput == BeltMachineBeh.CloseButtonName) {
-					beltMachine.DeActiveBeltMachinePopup();
-					return;
-				}
-				else if (nameInput == BeltMachineBeh.Ramen_UI || nameInput == BeltMachineBeh.CurryWithRice_UI || nameInput == BeltMachineBeh.Tempura_UI ||
-				         nameInput == BeltMachineBeh.YakiSoba_UI || nameInput == BeltMachineBeh.ZaruSoba_UI) {
-					beltMachine.HandleOnInput(ref nameInput);
-					return;
-				}
             }
 
             #endregion
         }
-        else if (currentGamePlayState == GamePlayState.PreparingFood)
-        {
+        else if (currentGamePlayState == GamePlayState.PreparingFood) {
             #region <!-- GamePlayState.PreparingFood.
 /*
             if (nameInput == BeltMachineBeh.CloseButtonName) {
@@ -1185,9 +1327,9 @@ public class SushiShop : Mz_BaseScene {
 			audioEffect.PlayOnecSound(audioEffect.correct_Clip);
 		
 			calculatorBeh.ClearCalcMechanism();
-            calculator_group_instance.SetActiveRecursively(false);
-            receiptGUIForm_groupObj.SetActiveRecursively(false);
-            darkShadowPlane.active = false;
+            calculator_group_instance.SetActive(false);
+            receiptGUIForm_groupObj.SetActive(false);
+            darkShadowPlane.SetActive(false);
 
             StartCoroutine(this.ReceiveMoneyFromCustomer());
         }
@@ -1206,9 +1348,9 @@ public class SushiShop : Mz_BaseScene {
 		int correct_TheChange = currentCustomer.payMoney - currentCustomer.amount;
 		if(correct_TheChange == calculatorBeh.GetDisplayResultTextToInt()) {
 			calculatorBeh.ClearCalcMechanism();
-			calculator_group_instance.SetActiveRecursively(false);
-            giveTheChangeGUIForm_groupObj.SetActiveRecursively(false);
-            darkShadowPlane.active = false;
+			calculator_group_instance.SetActive(false);
+            giveTheChangeGUIForm_groupObj.SetActive(false);
+            darkShadowPlane.SetActive(false);
 			
 			audioEffect.PlayOnecWithOutStop(audioEffect.correct_Clip);
 			
@@ -1229,17 +1371,15 @@ public class SushiShop : Mz_BaseScene {
 	}
 
     internal void CheckingGoodsObjInTray(string callFrom)
-    {
-		Debug.Log("CheckingGoodsObjInTray");
-		
+    {		
         if (callFrom == GoodsBeh.ClassName) {
 			// Check correctly of goods with arr_orderingItems.
 			// and change color of arr_orderingBaseItems.
 			foreach (tk2dSprite item in arr_orderingItems) 
 				item.transform.parent.GetComponent<tk2dSprite>().spriteId = arr_orderingBaseItems[0].GetSpriteIdByName(BASE_ORDER_ITEM_NORMAL);
-			if(foodTrayBeh.goodsOnTray_List.Count == 0) {
-				return;
-			}
+
+			if(foodTrayBeh.goodsOnTray_List.Count == 0)
+                return;
 			
             List<CustomerOrderRequire> list_goodsTemp = new List<CustomerOrderRequire>();
             Food temp_goods = null;
@@ -1387,18 +1527,20 @@ public class SushiShop : Mz_BaseScene {
         }
     }
     
-    private void PreparingToCloseShop()
-    {
+    private void PreparingToCloseShop() {
         this.OnDispose();
-		
-        iTween.MoveTo(slidingDoorLeft, iTween.Hash("position", new Vector3(-89f, 0f, 1), "islocal", true, "time", 1f, "easetype", iTween.EaseType.easeInSine));
-        iTween.MoveTo(slidingDoorRight, iTween.Hash("position", new Vector3(89f, 0f, 1), "islocal", true, "time", 1f, "easetype", iTween.EaseType.easeInSine,
-			"oncomplete", "RollingDoor_close", "oncompletetarget", this.gameObject));
-		
+
 		audioEffect.PlayOnecWithOutStop(base.soundEffect_clips[0]);
-        slidingDoorLeft.SetActiveRecursively(true);
-		slidingDoorRight.SetActiveRecursively(true);
+		slidingDoor.SetActive(true);
+		iTween.MoveTo(slidingDoor, iTween.Hash("position", new Vector3(0, 0, -20), "islocal", true, "time", 1f, "easetype", iTween.EaseType.linear,
+			"oncomplete", "RollingDoor_close", "oncompletetarget", this.gameObject));
     }
+
+	public override void OnDispose ()
+	{
+		instance = null;
+		goodDataStore.OnDestroy();
+	}
 	
     private void RollingDoor_close() {
         Mz_LoadingScreen.LoadSceneName = SceneNames.Town.ToString();
@@ -1407,7 +1549,7 @@ public class SushiShop : Mz_BaseScene {
 
     internal void WarningPlayerToSeeManual()
     {
-		Debug.Log(SushiShop.WarningMessageToSeeManual);
+		Debug.Log(Shop.WarningMessageToSeeManual);
         audioDescribe.PlayOnecSound(description_clips[9]);
     }
 
@@ -1444,5 +1586,37 @@ public class SushiShop : Mz_BaseScene {
 		CheckingUnityAnimationComplete.TargetAnimationComplete_event += (object sender, EventArgs e) => { 
 			Destroy(tk_coin);
 		};
+    }
+
+    internal void CreateObjOnNaperyArea(string p_name)
+    {
+        if (p_name == "Glass") { 
+        // create sundae icecream.
+			GameObject newAssemble = Instantiate(Resources.Load(Const_info.FOOD_SOLUTION_PATH + "IcecreamSundae", typeof(GameObject))) as GameObject;
+			napery.productAssemble = newAssemble.GetComponent<ProductAssemble>();
+            napery.productAssemble.transform.position = napery.instance.transform.position + new Vector3(0, 0, -5);
+			napery.productAssemble._canDragaable = true;
+        }
+        else if (p_name == "Cup") {
+            // create icecream take away.
+            GameObject newAssemble = Instantiate(Resources.Load(Const_info.FOOD_SOLUTION_PATH + "TakeawayIcecream", typeof(GameObject))) as GameObject;
+            napery.productAssemble = newAssemble.GetComponent<ProductAssemble>();
+            napery.productAssemble.transform.position = napery.instance.transform.position + new Vector3(0, 0, -5);
+            napery.productAssemble._canDragaable = true;
+        }
+        else if (p_name == "Disk") { 
+        // create banana split icecream.
+            GameObject newAssemble = Instantiate(Resources.Load(Const_info.FOOD_SOLUTION_PATH + "BNN_SS", typeof(GameObject))) as GameObject;
+            napery.productAssemble = newAssemble.GetComponent<ProductAssemble>();
+            napery.productAssemble.transform.position = napery.instance.transform.position + new Vector3(0, 0, -5);
+            napery.productAssemble._canDragaable = true;
+        }
+		else if(p_name == "BigGlass") {
+            // Create beverage assemble.
+            GameObject newAssemble = Instantiate(Resources.Load(Const_info.FOOD_SOLUTION_PATH + "Beverage", typeof(GameObject))) as GameObject;
+            napery.productAssemble = newAssemble.GetComponent<ProductAssemble>();
+            napery.productAssemble.transform.position = napery.instance.transform.position + new Vector3(0, 0, -5);
+            napery.productAssemble._canDragaable = true;
+		}
     }
 }

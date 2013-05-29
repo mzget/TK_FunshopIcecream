@@ -7,14 +7,18 @@ public class Mz_LoadingScreen : MonoBehaviour
 
     public static string LoadSceneName { get; set; }
 
-    //private int countTex = 0;
-	private bool _haveDisk = true;
 	private AsyncOperation async;
 
     public GameObject loading_background_sprite;
+	
+	private bool _haveDisk = true;
     private GUIStyle loadingGUISkin;
     public Font loadingFont;
 
+
+	void Awake() {
+		Mz_ResizeScale.ResizingScale(loading_background_sprite.transform);
+	}
 	
 	/// <summary>
 	/// Start this instance.
@@ -24,9 +28,16 @@ public class Mz_LoadingScreen : MonoBehaviour
         Time.timeScale = 1f;
 		Resources.UnloadUnusedAssets();
 
-//        Mz_ResizeScale.ResizingScale(loading_background_sprite.transform);
+#if   UNITY_ANDROID || UNITY_IOS
 		
-#if UNITY_STANDALONE_WIN 
+        async = Application.LoadLevelAsync(LoadSceneName);
+		if(Application.isLoadingLevel) {
+			while(async.isDone == false) {
+				yield return 0;
+			}
+		}
+
+#elif UNITY_STANDALONE_WIN
             //async = DatVistaData.LoadLevelAsync(sceneName);
 
             //if(DatVistaData.IsLoadLevelCheckVista) {
@@ -47,17 +58,7 @@ public class Mz_LoadingScreen : MonoBehaviour
                     yield return 0;
                 }
             }
-
-#elif UNITY_IPHONE || UNITY_ANDROID || UNITY_FLASH || UNITY_WEBPLAYER
-	
-        async = Application.LoadLevelAsync(LoadSceneName);
-		if(Application.isLoadingLevel) {
-			while(async.isDone == false) {
-				yield return 0;
-			}
-		}
-		
-#endif	
+#endif
     }
 
     void OnGUI()

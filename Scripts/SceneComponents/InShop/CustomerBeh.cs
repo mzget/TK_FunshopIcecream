@@ -9,8 +9,7 @@ public class CustomerOrderRequire {
 };
 
 public class CustomerBeh : MonoBehaviour {
-	
-	private SushiShop sceneManager;	
+		
     private tk2dAnimatedSprite animatedSprite;
 
 	internal bool _isPlayingAnimation = false;
@@ -40,11 +39,9 @@ public class CustomerBeh : MonoBehaviour {
 	// Use this for initialization
 	void Start ()
 	{
-		sceneManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<SushiShop> ();
-
         StartCoroutine(RandomCustomerFace());
 
-		list_goodsBag = new List<Food>(sceneManager.CanSellGoodLists);
+		list_goodsBag = new List<Food>(Shop.Instance.CanSellGoodLists);
 //		this.GenerateGoodOrder ();
 	}
 	
@@ -64,7 +61,7 @@ public class CustomerBeh : MonoBehaviour {
 	{
 		if (animatedSprite != null) {
 			animatedSprite.Play(arr_mutterAnimationClip_name[currentPlayAnimatedID]);	
-            sceneManager.audioEffect.PlayOnecWithOutStop(sceneManager.audioEffect.mutter_clip);
+            Shop.Instance.audioEffect.PlayOnecWithOutStop(Shop.Instance.audioEffect.mutter_clip);
 			_isPlayingAnimation = true;
 
             animatedSprite.animationCompleteDelegate += new tk2dAnimatedSprite.AnimationCompleteDelegate(delegate(tk2dAnimatedSprite sprite, int id) {
@@ -75,9 +72,10 @@ public class CustomerBeh : MonoBehaviour {
 	}
 
 	internal void GenerateTutorGoodOrderEvent() {
-		customerOrderRequire.Add(new CustomerOrderRequire() { food = new Food(GoodDataStore.FoodMenuList.Hot_greenTea.ToString(), 5), });   // number = 1,	// Random.Range(1, 4),
-		amount = 5;
-		sceneManager.GenerateOrderGUI();
+		customerOrderRequire.Add(new CustomerOrderRequire() { 
+			food = new Food(GoodDataStore.FoodMenuList.BananaCoveredWithChocolate.ToString(), 15) });   // number = 1,	// Random.Range(1, 4),
+		amount = 15;
+		Shop.Instance.GenerateOrderGUI();
 	}
 
     internal void GenerateGoodOrder()
@@ -89,10 +87,10 @@ public class CustomerBeh : MonoBehaviour {
 			customerOrderRequire.Add(new CustomerOrderRequire() { food = new Food(), });   // number = 1,	// Random.Range(1, 4),
         }
 
-        Debug.Log("GenerateGoodOrder complete! " + "Type : " + customerOrderRequire.Count);
+        Debug.Log("GenerateGoodOrder complete! " + "customerOrderRequire.Count : " + customerOrderRequire.Count);
 
         this.CalculationPrice();
-        sceneManager.GenerateOrderGUI();
+        Shop.Instance.GenerateOrderGUI();
 	}
 
     private void CalculationPrice()
@@ -103,6 +101,8 @@ public class CustomerBeh : MonoBehaviour {
         {
             prices[i] = customerOrderRequire[i].food.price;
 //            number[i] = customerOrderRequire[i].number;
+			
+			Debug.Log(customerOrderRequire[i].food.name);
         }
 
         for(int j = 0; j < customerOrderRequire.Count; j++) {

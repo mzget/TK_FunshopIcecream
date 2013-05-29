@@ -29,9 +29,9 @@ public class Mz_StorageManage : MonoBehaviour
     public static int TK_clothe_id = 255;
     public static int TK_hat_id = 255;
     public static int Pet_id = 0;
-	
-	public static bool _IsNoticeUser = false;
-	public static string KEY_NOTICE_USER_TO_UPGRADE = "NOTICE_USER_TO_UPGRADE";
+
+    public static bool _IsNoticeUser = false;
+    public static bool _HasNewGameEvent = false;
 
 	/// <summary>
 	/// Storage data key.
@@ -71,7 +71,9 @@ public class Mz_StorageManage : MonoBehaviour
 	public const string KEY_CAN_DECORATE_AWNING_LIST = "KEY_CAN_DECORATE_AWNING_LIST";
 	public const string KEY_CAN_DECORATE_TABLE_LIST = "KEY_CAN_DECORATE_TABLE_LIST";
 	public const string KEY_CAN_DECORATE_ACCESSORIES_LIST = "KEY_CAN_DECORATE_ACCESSORIES_LIST";
-	
+
+    public const string KEY_NOTICE_USER_TO_UPGRADE = "NOTICE_USER_TO_UPGRADE";
+    public const string KEY_IS_USER_PLAY_TUTOR = "KEY_IS_USER_PLAY_TUTOR";	
 	
 	
 

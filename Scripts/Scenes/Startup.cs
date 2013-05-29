@@ -9,7 +9,8 @@ public class Startup : Mz_BaseScene {
 		//<!-- get name quality.
 		//		qualities_list = QualitySettings.names;
 		this.AutomaticSetup_QualitySetting();
-		Handheld.PlayFullScreenMovie("Movies/LogoVista3D.mp4", Color.white, FullScreenMovieControlMode.Hidden, FullScreenMovieScalingMode.AspectFit);
+
+		Handheld.PlayFullScreenMovie("Movies/LogoVista.mp4", Color.white, FullScreenMovieControlMode.Hidden, FullScreenMovieScalingMode.AspectFit);
 		
 		if(Application.isLoadingLevel == false) {
 			Application.LoadLevelAsync(Mz_BaseScene.SceneNames.WaitForStart.ToString());
@@ -27,7 +28,7 @@ public class Startup : Mz_BaseScene {
 	}
 	
 	private void AutomaticSetup_QualitySetting() {
-		#if UNITY_IPHONE
+		#if UNITY_IPHONE && !UNITY_EDITOR
 
 		if(iPhone.generation == iPhoneGeneration.iPad1Gen ||
 		   iPhone.generation == iPhoneGeneration.iPhone3G || iPhone.generation == iPhoneGeneration.iPhone3GS) {
@@ -39,15 +40,15 @@ public class Startup : Mz_BaseScene {
 			Application.targetFrameRate = 60;
 		}
 
-		#elif UNITY_ANDROID
+		#elif UNITY_ANDROID && !UNITY_EDITOR
 
-		if(Screen.height < Main.HD_HEIGHT) {			
+		if(Screen.height <= 480) {			
 			QualitySettings.SetQualityLevel(0);	
 			Application.targetFrameRate = 30;
 		}
 		else {
 			QualitySettings.SetQualityLevel(1);
-			Application.targetFrameRate = 60;
+			Application.targetFrameRate = 30;
 		}
 
 		#else 

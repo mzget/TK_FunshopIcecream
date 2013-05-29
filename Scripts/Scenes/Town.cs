@@ -2,6 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using UE = UnityEngine;
 
 
 [System.Serializable]
@@ -32,7 +33,7 @@ public class Town : Mz_BaseScene {
     public GameObject flyingBird_group;
 	public GameObject shop_body_sprite;
     public GameObject SheepbankDoor;
-	const string SHOP_DOOR_NAME = "Shop_door";
+	private const string SHOP_DOOR_NAME = "Shop_door";
     public tk2dAnimatedSprite shopDoor_anim;
     public tk2dAnimatedSprite sheepBank_door_animated;
     public Transform midcenter_anchor;
@@ -44,9 +45,6 @@ public class Town : Mz_BaseScene {
     internal GameObject pet;
 
     private bool _updatable = true;
-	public enum OnGUIState { none = 0, DrawEditShopname, };
-	public OnGUIState currentGUIState;
-	string shopname = "";
 	Rect editShop_Textfield_rect = new Rect( 50, 60, 200, 50);
 	Rect editShop_OKButton_rect = new Rect(10, 150, 100, 40);
 	Rect editShop_CancelButton_rect = new Rect(160, 150, 100, 40);
@@ -67,7 +65,7 @@ public class Town : Mz_BaseScene {
 		Town.newGameStartup_Event -= Town.Handle_NewGameStartupEvent;
 
 		if(StartingTrucks == null) {
-			StartingTrucks = Instantiate(Resources.Load("StartingTrucks", typeof(GameObject)), new Vector3(-200f, -62f, -6f), Quaternion.identity)  as GameObject;
+			StartingTrucks = Instantiate(Resources.Load("StartingTrucks", typeof(GameObject)), new Vector3(-200f, -110f, -6f), Quaternion.identity)  as GameObject;
 		}
 		
 		iTween.MoveTo(StartingTrucks, iTween.Hash("x", 500f, "Time", 15f, "easetype", iTween.EaseType.linear,
@@ -148,7 +146,7 @@ public class Town : Mz_BaseScene {
         Mz_ResizeScale.ResizingScale(town_bg_group.transform);
 
 		StartCoroutine(ReInitializeAudioClipData());
-		StartCoroutine(this.InitializeAudio());
+		StartCoroutine(this.InitAudio());
         StartCoroutine(base.InitializeIdentityGUI());
 
         this.upgradeOutsideManager.InitializeDecorationObjects();
@@ -162,7 +160,8 @@ public class Town : Mz_BaseScene {
 		iTween.MoveTo(movingCloud.gameObject, iTween.Hash("x", -85f, "islocal", true, "time", 20f, "easetype", iTween.EaseType.easeInSine, "looptype", iTween.LoopType.pingPong));
 		iTween.MoveTo(backgroup_group_transform, iTween.Hash("y", 64f, "time", 16f, "easetype", iTween.EaseType.linear, "looptype", iTween.LoopType.pingPong));
 
-        if(MainMenu._HasNewGameEvent == false) {
+        if (Mz_StorageManage._HasNewGameEvent == false)
+        {
          	if(Town.IntroduceGameUI_Event == null) {
 				this.Checking_HasNewStartingTruckEvent();
 
@@ -174,19 +173,20 @@ public class Town : Mz_BaseScene {
 				this.CreateAudioTipObj();
 			}
 		}
-        else if(MainMenu._HasNewGameEvent && SheepBank.HaveUpgradeOutSide == false && Town.IntroduceGameUI_Event == null) {
-            plane_darkShadow.active = true;
+        else if (Mz_StorageManage._HasNewGameEvent && SheepBank.HaveUpgradeOutSide == false && Town.IntroduceGameUI_Event == null)
+        {
+            plane_darkShadow.SetActive(true);
             SheepbankDoor.transform.position += Vector3.back * 10;
             this.CreateTutorObjectAtRuntime();
         }
-        else if (MainMenu._HasNewGameEvent && SheepBank.HaveUpgradeOutSide && Town.IntroduceGameUI_Event == null) {           
-            plane_darkShadow.active = true;
+        else if (Mz_StorageManage._HasNewGameEvent && SheepBank.HaveUpgradeOutSide && Town.IntroduceGameUI_Event == null)
+        {           
+            plane_darkShadow.SetActive(true);
             plane_darkShadow.transform.position -= Vector3.forward * 2.5f;
             townTutorData.roof_00_button_obj.transform.position -= Vector3.forward * 2;
             this.CreateBuyDecoratuionTutorEvent();
         }
 	}
-
 
     #region <@-- Tutor system.
 
@@ -247,8 +247,8 @@ public class Town : Mz_BaseScene {
         shopDoor_anim.gameObject.transform.position += Vector3.back * 13;
         characterAnimatedManage.gameObject.transform.position += Vector3.back * 13;
 
-        handTutor.transform.localPosition = new Vector3(0f, 0f, 5f);
-        tutorDescriptions[0].transform.localPosition = new Vector3(20f, 0f, 5f);
+        handTutor.transform.localPosition = new Vector3(42f, 18f, 5f);
+        tutorDescriptions[0].transform.localPosition = new Vector3(60f, 0f, 5f);
         tutorDescriptions[0].GetComponent<tk2dTextMesh>().text = "LET'S PLAY";
         tutorDescriptions[0].GetComponent<tk2dTextMesh>().Commit();
 
@@ -301,37 +301,68 @@ public class Town : Mz_BaseScene {
 		OnnewGameStartup_Event(EventArgs.Empty);
 	}
 
-	protected new IEnumerator InitializeAudio ()
-	{
-    	base.InitializeAudio();
-		
+    protected IEnumerator InitAudio()
+    {
+        base.InitializeAudio();
+
         audioBackground_Obj.audio.clip = base.background_clip;
         audioBackground_Obj.audio.loop = true;
         audioBackground_Obj.audio.Play();
 
+        base.audioManager = ScriptableObject.CreateInstance<Base_AudioManager>();
+        if (Main.Mz_AppLanguage.appLanguage == Main.Mz_AppLanguage.SupportLanguage.EN)
+        {
+            for (int i = 0; i < arr_EN_AppreciateClipName.Length; i++)
+            {
+                base.audioManager.appreciate_Clips.Add(Resources.Load(Const_info.PATH_OF_APPRECIATE_CLIP + arr_EN_AppreciateClipName[i], typeof(AudioClip)) as AudioClip);
+            }
+        }
+        else if (Main.Mz_AppLanguage.appLanguage == Main.Mz_AppLanguage.SupportLanguage.TH)
+        {
+            for (int i = 0; i < arr_TH_AppreciateClipName.Length; i++)
+            {
+                base.audioManager.appreciate_Clips.Add(Resources.Load(Const_info.PATH_OF_APPRECIATE_CLIP + arr_TH_AppreciateClipName[i], typeof(AudioClip)) as AudioClip);
+            }
+        }
+
         yield return null;
-	}
-	
-	private const string PATH_OF_DYNAMIC_CLIP = "AudioClips/GameIntroduce/Town/";
+    }
+
+
+    private const string PATH_OF_DYNAMIC_CLIP = "AudioClips/GameIntroduce/Town/";
+    private readonly string[] arr_TH_AppreciateClipName = new string[] {
+        "TH_appreciate_01", 
+        "TH_appreciate_02",
+        "TH_appreciate_03",
+        "TH_appreciate_04",
+	};
+    private readonly string[] arr_EN_AppreciateClipName = new string[] {
+        "EN_appreciate_001", 
+        "EN_appreciate_002",
+        "EN_appreciate_003",
+        "EN_appreciate_004",
+    };
     private IEnumerator ReInitializeAudioClipData()
-	{
-		description_clips.Clear();
-		if(Main.Mz_AppLanguage.appLanguage == Main.Mz_AppLanguage.SupportLanguage.TH) {
-			description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "TH_tutor_01", typeof(AudioClip)) as AudioClip);
-			description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "TH_Letplay", typeof(AudioClip)) as AudioClip);
-			description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "TH_decoration", typeof(AudioClip)) as AudioClip);
-			description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "TH_trophy", typeof(AudioClip)) as AudioClip);
-			description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "TH_dress", typeof(AudioClip)) as AudioClip);
-			description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "TH_touchmove", typeof(AudioClip)) as AudioClip);
-		}
-		else if(Main.Mz_AppLanguage.appLanguage == Main.Mz_AppLanguage.SupportLanguage.EN) {
-			description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "EN_tutor_01", typeof(AudioClip)) as AudioClip);
-			description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "EN_Letplay", typeof(AudioClip)) as AudioClip);
-			description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "EN_decoration", typeof(AudioClip)) as AudioClip);
-			description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "EN_trophy", typeof(AudioClip)) as AudioClip);
-			description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "EN_dress", typeof(AudioClip)) as AudioClip);
-			description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "EN_touchmove", typeof(AudioClip)) as AudioClip);
-		}		
+    {
+        description_clips.Clear();
+        if (Main.Mz_AppLanguage.appLanguage == Main.Mz_AppLanguage.SupportLanguage.TH)
+        {
+            description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "TH_tutor_01", typeof(AudioClip)) as AudioClip);
+            description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "TH_Letplay", typeof(AudioClip)) as AudioClip);
+            description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "TH_decoration", typeof(AudioClip)) as AudioClip);
+            description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "TH_trophy", typeof(AudioClip)) as AudioClip);
+            description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "TH_dress", typeof(AudioClip)) as AudioClip);
+            description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "TH_touchmove", typeof(AudioClip)) as AudioClip);
+        }
+        else if (Main.Mz_AppLanguage.appLanguage == Main.Mz_AppLanguage.SupportLanguage.EN)
+        {
+            description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "EN_tutor_01", typeof(AudioClip)) as AudioClip);
+            description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "EN_Letplay", typeof(AudioClip)) as AudioClip);
+            description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "EN_decoration", typeof(AudioClip)) as AudioClip);
+            description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "EN_trophy", typeof(AudioClip)) as AudioClip);
+            description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "EN_dress", typeof(AudioClip)) as AudioClip);
+            description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "EN_touchmove", typeof(AudioClip)) as AudioClip);
+        }			
 		
 		yield return 0;
     }
@@ -342,10 +373,10 @@ public class Town : Mz_BaseScene {
 	{
 		yield return StartCoroutine(this.SettingGUIMidcenter(true));
 
-		if(ConservationAnimals.Level >= 1 && LoveDogConsortium.Level >= 1 && ExtendsStorageManager.TK_clothe_id == 13 && ExtendsStorageManager.TK_hat_id == 13)
-			upgradeOutsideManager.pet_button_obj.active = true;
+		if(ConservationAnimals.Level >= 1 && LoveDogConsortium.Level >= 1)
+			upgradeOutsideManager.pet_button_obj.SetActive(true);
 		else 
-			upgradeOutsideManager.pet_button_obj.active = false;
+			upgradeOutsideManager.pet_button_obj.SetActive(false);
 		
 		iTween.MoveTo(upgradeOutside_baseAnchor.gameObject, iTween.Hash("position", new Vector3(0, 0, 8), "islocal", true, "time", 1f, "easetype", iTween.EaseType.spring));
 
@@ -417,10 +448,6 @@ public class Town : Mz_BaseScene {
     private void OnGUI() {
         GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(1, Screen.height / Main.GAMEHEIGHT, 1));    
 		
-		/// OnGUIState.DrawEditShopname.
-		if(currentGUIState == OnGUIState.DrawEditShopname)
-			this.DrawEditShopnameWindow();
-
         if (GUI.Button(new Rect(0, Main.FixedGameHeight / 2 - 25, 150 * Mz_OnGUIManager.Extend_heightScale, 50), "Swindle"))
         {
             Mz_StorageManage.AvailableMoney = 100000;
@@ -428,53 +455,9 @@ public class Town : Mz_BaseScene {
         }
     }
 
-	void DrawEditShopnameWindow ()
-	{
-		GUI.BeginGroup(new Rect (Screen.width / 2 - 150, Main.GAMEHEIGHT / 2 - 100, 300, 200), "Edit shopname !", GUI.skin.window);
-		{
-			shopname = GUI.TextField(editShop_Textfield_rect, shopname, 24);
-
-			if(GUI.Button(editShop_OKButton_rect, "OK")) {
-				if(shopname != "" && shopname.Length >= 3) {
-
-					if(shopname == "Fulfill your greed") {
-						Mz_StorageManage.AvailableMoney += 1000000;
-                        characterAnimatedManage.PlayEyeAnimation(CharacterAnimationManager.NameAnimationsList.agape);
-
-						shopname = string.Empty;
-					}
-					else if(shopname == "Greed is bad") {
-                        SushiShop.NumberOfCansellItem.Clear();
-                        for (int i = 0; i < 30; i++)
-                        {
-                            SushiShop.NumberOfCansellItem.Add(i);
-                        }
-                        base.extendsStorageManager.SaveCanSellGoodListData();
-                        characterAnimatedManage.PlayEyeAnimation(CharacterAnimationManager.NameAnimationsList.agape);
-
-						shopname = string.Empty;
-					}
-					else {
-						Mz_StorageManage.ShopName = shopname;
-					}
-
-                    base.extendsStorageManager.SaveDataToPermanentMemory();
-
-					currentGUIState = OnGUIState.none;
-					base.UpdateTimeScale(1);
-				}
-			}
-			else if(GUI.Button(editShop_CancelButton_rect, "Cancel")) {
-				currentGUIState = OnGUIState.none;
-				base.UpdateTimeScale(1);
-			}
-		}
-		GUI.EndGroup();
-	}
-
 	public override void OnInput (string nameInput)
 	{
-		if (upgradeOutside_baseAnchor.active) {
+		if (upgradeOutside_baseAnchor.activeSelf) {
 			switch (nameInput) {
 			case "Close_button": StartCoroutine(this.UnActiveDecorationBar());
 				break;
@@ -494,8 +477,8 @@ public class Town : Mz_BaseScene {
 				break;
 			case "Next_button" : upgradeOutsideManager.HaveNextPageCommand();
 				break;
-            case "Block_00": 
-                if (MainMenu._HasNewGameEvent)
+            case "Block_00":
+                if (Mz_StorageManage._HasNewGameEvent)
                     base.SetActivateTotorObject(false);
 
                 upgradeOutsideManager.BuyDecoration("Block_00"); 
@@ -513,14 +496,14 @@ public class Town : Mz_BaseScene {
             case "Block_06": upgradeOutsideManager.BuyDecoration("Block_06");
                 break;
             case YES_BUTTON_NAME:
-                if (MainMenu._HasNewGameEvent)
+                if (Mz_StorageManage._HasNewGameEvent)
                 {
                     StartCoroutine(this.WaitForDecorationTweenDownComplete());
                 }
                 upgradeOutsideManager.UserConfirmTransaction();
                 break;
             case NO_BUTTON_NAME:
-                if (MainMenu._HasNewGameEvent)
+                if (Mz_StorageManage._HasNewGameEvent)
                     this.audioDescribe.PlayOnecWithOutStop(this.audioEffect.wrong_Clip);
                 else
                     upgradeOutsideManager.UserCancleTransaction();
@@ -580,7 +563,7 @@ public class Town : Mz_BaseScene {
 
     void PlayShopDoorOpenAnimation()
     {
-        shopDoor_anim.Play("Open");
+        shopDoor_anim.Play("ShopOpen");
         shopDoor_anim.animationCompleteDelegate = delegate(tk2dAnimatedSprite sprite, int clipId)
         {
             if (Application.isLoadingLevel == false) {
@@ -607,11 +590,21 @@ public class Town : Mz_BaseScene {
 		characterAnimatedManage.RandomPlayGoodAnimation();
 	}
 
+    internal void PlayAppreciateAudioClip(bool p_random)
+    {
+        if (p_random)
+        {
+            int r = UE.Random.Range(0, audioManager.appreciate_Clips.Count);
+            audioDescribe.PlayOnecSound(audioManager.appreciate_Clips[r]);
+        }
+    }
+
     public override void OnDispose()
     {
         base.OnDispose();
+		
         //<!-- Clear static NumberOfCanSellItem.
-        SushiShop.NumberOfCansellItem.Clear();
+        Shop.Name_Of_CanSellItem.Clear();
 		UpgradeOutsideManager.CanDecorateRoof_list.Clear();
 		UpgradeOutsideManager.CanDecorateAwning_list.Clear();
 		UpgradeOutsideManager.CanDecoration_Table_list.Clear();

@@ -4,8 +4,7 @@ using System.Collections;
 
 public class GoodsBeh : ObjectsBeh {    
     public const string ClassName = "GoodsBeh";
-
-    protected SushiShop sceneManager;
+    internal int index_of_instance;
 
     public Vector3 offsetPos;	
 	private string animationName_001 = string.Empty;
@@ -32,21 +31,19 @@ public class GoodsBeh : ObjectsBeh {
 	//<!-- Put goods objects intance on food tray.
     public class PutGoodsToTrayEventArgs : EventArgs
     {
-//        public GoodsBeh food;
         public GameObject foodInstance;
     };
-	private event EventHandler<PutGoodsToTrayEventArgs> putObjectOnTray_Event;
-    internal EventHandler<PutGoodsToTrayEventArgs> GoodsBeh_putObjectOnTray_Event;
+	internal event EventHandler<PutGoodsToTrayEventArgs> putObjectOnTray_Event;
 	protected void OnPutOnTray_event (PutGoodsToTrayEventArgs e) {
 		if (putObjectOnTray_Event != null) 
         {
 			putObjectOnTray_Event (this, e);
-            sceneManager.audioEffect.PlayOnecWithOutStop(sceneManager.soundEffect_clips[5]);
+			Shop.Instance.audioEffect.PlayOnecWithOutStop(Shop.Instance.soundEffect_clips[5]);
 			
             Debug.Log(putObjectOnTray_Event + ":: OnPutOnTray_event : " + this.name);
 
-            if(MainMenu._HasNewGameEvent)
-                sceneManager.CheckingGoodsObjInTray("newgame_event");
+            if(Mz_StorageManage._HasNewGameEvent)
+				Shop.Instance.CheckingGoodsObjInTray("newgame_event");
 		}
 	}
 
@@ -58,18 +55,19 @@ public class GoodsBeh : ObjectsBeh {
 		
 		Ray cursorRay;
 		RaycastHit hit;		
-		cursorRay = new Ray(this.transform.position, Vector3.forward);
+	    cursorRay = new Ray(this.transform.position, Vector3.forward);		
+		Debug.DrawRay(cursorRay.origin, Vector3.forward, Color.red);
 		
-		if(Physics.Raycast(cursorRay, out hit)) 
+		if(Physics.Raycast(cursorRay, out hit, 1000f)) 
         {
-			if(hit.collider.name == sceneManager.binBeh.name) {			
+			if(hit.collider.name == Shop.Instance.binBeh.name) {			
 				if(this._isDropObject == true) {
-                    sceneManager.binBeh.PlayOpenAnimation();
+					Shop.Instance.binBeh.PlayOpenAnimation();
                     this.OnDispose();
                     OnDestroyObject_event(System.EventArgs.Empty);
 				}
 			}
-			else if(hit.collider.name == sceneManager.foodsTray_obj.name) {
+			else if(hit.collider.name == Shop.Instance.foodsTray_obj.name) {
                 if(this._isDropObject) {
 					this._isDropObject = false;
 	                base._isDraggable = false;
@@ -95,8 +93,6 @@ public class GoodsBeh : ObjectsBeh {
                 base._isDraggable = false;
             }
 		}
-		
-		Debug.DrawRay(cursorRay.origin, Vector3.forward, Color.red);
 	}
 
     private void StopActiveAnimation() {
@@ -115,20 +111,6 @@ public class GoodsBeh : ObjectsBeh {
 			animatedSprite.animationCompleteDelegate -= animationCompleteDelegate;
 		}
 	}
-
-    protected override void Awake()
-    {
-        base.Awake();
-
-        sceneManager = baseScene.GetComponent<SushiShop>();
-    }
-
-    protected override void Start()
-    {
-        base.Start();
-
-        putObjectOnTray_Event += new EventHandler<PutGoodsToTrayEventArgs>(GoodsBeh_putObjectOnTray_Event);
-    }
 
     protected override void OnTouchBegan()
     {
@@ -167,5 +149,17 @@ public class GoodsBeh : ObjectsBeh {
 
         Destroy(this.gameObject);
         this.waitForIngredientEvent -= this.Handle_waitForIngredientEvent;
-    }
+    }	
+	
+	internal void Handle_DestroyProduct_Event(object sender, System.EventArgs e)
+	{
+		Debug.Log("Handle_DestroyProduct_Event : " + sender.ToString());
+		
+		GoodsBeh goods = sender as GoodsBeh;
+		Mz_StorageManage.AvailableMoney -= goods.costs;
+		Shop.Instance.CreateDeductionsCoin (goods.costs);
+		Shop.Instance.ReFreshAvailableMoney();		
+		Shop.Instance.foodTrayBeh.goodsOnTray_List.Remove(goods);
+		Shop.Instance.foodTrayBeh.ReCalculatatePositionOfGoods();
+	}
 }

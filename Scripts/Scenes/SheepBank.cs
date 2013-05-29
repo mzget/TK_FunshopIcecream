@@ -43,7 +43,8 @@ public class SheepBank : Mz_BaseScene {
 	public GameObject withdrawalForm_Obj;
 	public GameObject transactionForm_Obj;
     public GameObject donationForm_group;
-	public GameObject passbook_group;
+    public GameObject passbook_group;
+    public GameObject depositIcon;
 	public GameObject shadowPlane_Obj;
 	public tk2dTextMesh availableMoney_Textmesh;
 	public tk2dTextMesh accountBalance_Textmesh;
@@ -81,8 +82,6 @@ public class SheepBank : Mz_BaseScene {
 	public SheepBankTutor sheepBankTutor;
     public BankOfficer offecer = new BankOfficer();
     public GameObject[] upgradeButtons = new GameObject[8];
-	public AudioClip long_introduce_clip;
-	public AudioClip short_introduce_clip;
 
     public enum GameSceneStatus { none = 0, ShowUpgradeInside = 1, ShowDonationForm, ShowDepositForm, ShowWithdrawalForm, ShowPassbook, };
     public GameSceneStatus currentGameStatus;
@@ -106,20 +105,20 @@ public class SheepBank : Mz_BaseScene {
 
         this.InitializeFields();
 		
-		if(MainMenu._HasNewGameEvent) {
-			shadowPlane_Obj.gameObject.active = true;
+		if(Mz_StorageManage._HasNewGameEvent) {
+			shadowPlane_Obj.SetActive(true);
 			sheepBankTutor.Deposit_button_obj.transform.position += Vector3.back * 11;
 			sheepBankTutor.Back_Button_obj.transform.position += Vector3.forward * 20;
 			this.CreateTutorObjectAtRuntime();
 		}
 		else {
-			shadowPlane_Obj.gameObject.active = false;
+			shadowPlane_Obj.SetActive(false);
 		}
 	}
 
     private IEnumerator InitializeBankOfficer()
     {
-        if (MainMenu._HasNewGameEvent)
+        if (Mz_StorageManage._HasNewGameEvent)
 		{
 			audioDescribe.PlayOnecWithOutStop(description_clips[0]);
             StartCoroutine(PlayWomanOfficerAnimation(string.Empty));
@@ -217,7 +216,7 @@ public class SheepBank : Mz_BaseScene {
 
         SetActivateTotorObject(true);
 
-        shadowPlane_Obj.gameObject.active = true;
+        shadowPlane_Obj.SetActive(true);
         sheepBankTutor.UpgradeOutside_button_obj.transform.position += Vector3.back * 11;
         sheepBankTutor.Back_Button_obj.transform.localPosition = new Vector3(-108f, -85f, -5);
 
@@ -244,35 +243,67 @@ public class SheepBank : Mz_BaseScene {
 	}
 	
 	private const string PATH_OF_DYNAMIC_CLIP = "AudioClips/GameIntroduce/SheepBank/";
-	private const string PATH_OF_NOTIFICATION_CLIP = "AudioClips/Notifications/";
-	private IEnumerator ReInitializeAudioClipData()
-	{
-		description_clips.Clear();
-		if(Main.Mz_AppLanguage.appLanguage == Main.Mz_AppLanguage.SupportLanguage.TH) {
-			description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "TH_introduce", typeof(AudioClip)) as AudioClip);
-			description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "TH_upgradeInside", typeof(AudioClip)) as AudioClip);
-			description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "", typeof(AudioClip)) as AudioClip);
-			description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "TH_upgradeOutside", typeof(AudioClip)) as AudioClip);
-			description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "TH_SelectionUpgradeItem", typeof(AudioClip)) as AudioClip);
-			description_clips.Add(Resources.Load(PATH_OF_NOTIFICATION_CLIP + "TH_deposit_warning", typeof(AudioClip)) as AudioClip);
-			description_clips.Add(Resources.Load(PATH_OF_NOTIFICATION_CLIP + "TH_cannot_donation", typeof(AudioClip)) as AudioClip);
-			
-			short_introduce_clip = Resources.Load(PATH_OF_DYNAMIC_CLIP + "TH_greeting", typeof(AudioClip)) as AudioClip;
-		}
-		else if(Main.Mz_AppLanguage.appLanguage == Main.Mz_AppLanguage.SupportLanguage.EN) {
-			description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "EN_introduce", typeof(AudioClip)) as AudioClip);
-			description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "EN_upgradeInside", typeof(AudioClip)) as AudioClip);
-			description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "", typeof(AudioClip)) as AudioClip);
-			description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "EN_upgradeOutside", typeof(AudioClip)) as AudioClip);
-			description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + "EN_SelectionUpgradeItem", typeof(AudioClip)) as AudioClip);
-			description_clips.Add(Resources.Load(PATH_OF_NOTIFICATION_CLIP + "EN_deposit_warning", typeof(AudioClip)) as AudioClip);
-			description_clips.Add(Resources.Load(PATH_OF_NOTIFICATION_CLIP + "EN_cannot_donation", typeof(AudioClip)) as AudioClip);
-			
-			short_introduce_clip = Resources.Load(PATH_OF_DYNAMIC_CLIP + "EN_greeting", typeof(AudioClip)) as AudioClip;
-		}		
-		
-		yield return 0;
-	}
+    private const string PATH_OF_NOTIFICATION_CLIP = "AudioClips/Notifications/";
+    public AudioClip short_introduce_clip;
+    public AudioClip getReward_clip;
+    public Dictionary<int, string> TH_DescriptionDict = new Dictionary<int, string>() {
+		{0, "TH_introduce"},
+		{1, "TH_upgradeInside"},
+		{2, "TH_donation"},
+		{3, "TH_upgradeOutside"},
+		{4, "TH_SelectionUpgradeItem"},
+		{5, "TH_deposit"},
+		{6, "TH_withdraw"},
+		{7, "TH_interior_upgrade"},
+		{8, "TH_exterior_upgrade"},
+		{9, "TH_deposit_warning"},
+		{10, "TH_cannot_donation"},
+		{11, "TH_CannotBuyItem"},
+	};
+    public Dictionary<int, string> EN_DescriptionDict = new Dictionary<int, string>() {
+		{0, "EN_introduce"},
+		{1, "EN_upgradeInside"},
+		{2, "EN_donation"},
+		{3, "EN_upgradeOutside"},
+		{4, "EN_SelectionUpgradeItem"},
+		{5, "EN_deposit"},
+		{6, "EN_withdraw"},
+		{7, "EN_interior_upgrade"},
+		{8, "EN_exterior_upgrade"},
+		{9, "EN_deposit_warning"},
+		{10, "EN_cannot_donation"},
+		{11, "EN_CannotBuyItem"},
+	};
+    private IEnumerator ReInitializeAudioClipData()
+    {
+        description_clips.Clear();
+        if (Main.Mz_AppLanguage.appLanguage == Main.Mz_AppLanguage.SupportLanguage.TH)
+        {
+            for (int i = 0; i < TH_DescriptionDict.Count; i++)
+            {
+                if (i < 9)
+                    description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + TH_DescriptionDict[i], typeof(AudioClip)) as AudioClip);
+                else
+                    description_clips.Add(Resources.Load(PATH_OF_NOTIFICATION_CLIP + TH_DescriptionDict[i], typeof(AudioClip)) as AudioClip);
+            }
+
+            short_introduce_clip = Resources.Load(PATH_OF_DYNAMIC_CLIP + "TH_greeting", typeof(AudioClip)) as AudioClip;
+        }
+        else if (Main.Mz_AppLanguage.appLanguage == Main.Mz_AppLanguage.SupportLanguage.EN)
+        {
+            for (int i = 0; i < TH_DescriptionDict.Count; i++)
+            {
+                if (i < 9)
+                    description_clips.Add(Resources.Load(PATH_OF_DYNAMIC_CLIP + EN_DescriptionDict[i], typeof(AudioClip)) as AudioClip);
+                else
+                    description_clips.Add(Resources.Load(PATH_OF_NOTIFICATION_CLIP + EN_DescriptionDict[i], typeof(AudioClip)) as AudioClip);
+            }
+
+            short_introduce_clip = Resources.Load(PATH_OF_DYNAMIC_CLIP + "EN_greeting", typeof(AudioClip)) as AudioClip;
+        }
+
+        yield return 0;
+    }
 	
 	protected override void InitializeGameEffectGenerator ()
 	{
@@ -345,7 +376,7 @@ public class SheepBank : Mz_BaseScene {
 				upgradeInsideManager.upgradeButton_Objs[i,j] = upgradeInside_window_Obj.transform.Find("upgrade_" + i+j).gameObject;
 			}
 		}
-		upgradeInside_window_Obj.SetActiveRecursively(false);
+		upgradeInside_window_Obj.SetActive(false);
 		depositForm_Obj.gameObject.SetActiveRecursively(false);
 		withdrawalForm_Obj.gameObject.SetActiveRecursively(false);
 		transactionForm_Obj.gameObject.SetActiveRecursively(false);
@@ -386,8 +417,9 @@ public class SheepBank : Mz_BaseScene {
 
 //            upgradeInsideManager.ReInitializeData();
         }
-		
-		if(MainMenu._HasNewGameEvent) {
+
+        if (Mz_StorageManage._HasNewGameEvent)
+        {
 			upgradeInside_window_Obj.transform.position += Vector3.forward * 15;
             this.CreateBuyUpgradeShopTutorEvent();
 		}
@@ -400,7 +432,7 @@ public class SheepBank : Mz_BaseScene {
 	}
 
     private void OnMoveUpComplete_event() {
-        upgradeInside_window_Obj.SetActiveRecursively(false);
+        upgradeInside_window_Obj.SetActive(false);
 		depositForm_Obj.gameObject.SetActiveRecursively(false);
 		withdrawalForm_Obj.gameObject.SetActiveRecursively(false);
 		transactionForm_Obj.gameObject.SetActiveRecursively(false);
@@ -408,9 +440,9 @@ public class SheepBank : Mz_BaseScene {
 		passbook_group.SetActiveRecursively(false);
 		availabelMoneyBillboard_Obj.SetActiveRecursively(false);
 
-        currentGameStatus = GameSceneStatus.none;   
-		
-		if(MainMenu._HasNewGameEvent == false)
+        currentGameStatus = GameSceneStatus.none;
+
+        if (Mz_StorageManage._HasNewGameEvent == false)
 			shadowPlane_Obj.gameObject.active = false;
     }
 
@@ -432,70 +464,87 @@ public class SheepBank : Mz_BaseScene {
 	{
         if (nameInput == UpgradeInside_BUTTON_NAME)
         {
-			if(MainMenu._HasNewGameEvent) {
+            if (Mz_StorageManage._HasNewGameEvent) {
 				this.SetActivateTotorObject(false);
 				sheepBankTutor.UpgradeInside_button_obj.transform.position += Vector3.forward * 11;
 			}
 			
             StartCoroutine(this.PlayManOfficerAnimation("ActiveUpgradeInsideForm"));
-            shadowPlane_Obj.gameObject.active = true;
+			shadowPlane_Obj.SetActive(true);
+			if(Mz_StorageManage._HasNewGameEvent == false)
+				audioDescribe.PlayOnecSound(description_clips[7]);
+
             return;
         }
         else if (nameInput == UpgradeOutside_BUTTON_NAME)
         {
             StartCoroutine(PlayManOfficerAnimation("ActiveUpgradeOutside"));
-            shadowPlane_Obj.gameObject.active = true;
+			shadowPlane_Obj.SetActive(true);
+			if(Mz_StorageManage._HasNewGameEvent == false)
+				audioDescribe.PlayOnecSound(description_clips[8]);
+
             return;
         }
         else if (nameInput == DEPOSIT_BUTTON_NAME)
         {
-			if(MainMenu._HasNewGameEvent) {
+            if (Mz_StorageManage._HasNewGameEvent)
+            {
 				this.SetActivateTotorObject(false);
 				sheepBankTutor.Deposit_button_obj.transform.position += Vector3.forward * 11;
 			}
 			
 			StartCoroutine(this.PlayWomanOfficerAnimation(ActiveDepositForm_function));
-			shadowPlane_Obj.gameObject.active = true;
+			shadowPlane_Obj.SetActive(true);
+			if(Mz_StorageManage._HasNewGameEvent == false)
+				audioDescribe.PlayOnecSound(description_clips[5]);
+
 			return;
         }
         else if (nameInput == WITHDRAWAL_BUTTON_NAME)
         {
             StartCoroutine(this.PlayWomanOfficerAnimation(ActiveWithdrawalForm_function));
-            shadowPlane_Obj.gameObject.active = true;
+			shadowPlane_Obj.SetActive(true);
+			if(Mz_StorageManage._HasNewGameEvent == false)
+				audioDescribe.PlayOnecSound(description_clips[6]);
+
             return;
         }
         else if (nameInput == Donate_Button_Name)
         {
             StartCoroutine(this.PlayWomanOfficerAnimation(ActiveDonationForm_function));
-            shadowPlane_Obj.gameObject.active = true;
+			shadowPlane_Obj.SetActive(true);
+			audioDescribe.PlayOnecSound(description_clips[2]);
+
             return;
         }
         else if (nameInput == PASSBOOKBUTTONNAME)
         {
             this.ActivePassbookForm();
-            shadowPlane_Obj.gameObject.active = true;
+            shadowPlane_Obj.SetActive(true);
             return;
         }
         else if (nameInput == BACK_BUTTON_NAME)
         {
-            if (upgradeInside_window_Obj.active)
+            if (upgradeInside_window_Obj.activeSelf)
             {
                 iTween.MoveTo(upgradeInside_window_Obj.gameObject, moveUp_hashdata);
+                iTween.StopByName(depositIcon.gameObject, "ShakeDepositIcon");
+                depositIcon.SetActive(false);
                 return;
             }
-            if (depositForm_Obj.gameObject.active)
+            if (depositForm_Obj.activeSelf)
             {
                 iTween.MoveTo(depositForm_Obj.gameObject, moveUp_hashdata);
                 iTween.MoveTo(transactionForm_Obj.gameObject, moveUp_hashdata);
                 return;
             }
-            if (withdrawalForm_Obj.gameObject.active)
+            if (withdrawalForm_Obj.activeSelf)
             {
                 iTween.MoveTo(withdrawalForm_Obj.gameObject, moveUp_hashdata);
                 iTween.MoveTo(transactionForm_Obj.gameObject, moveUp_hashdata);
                 return;
             }
-            else if (donationForm_group.active)
+            else if (donationForm_group.activeSelf)
             {
                 iTween.MoveTo(donationForm_group, moveUp_hashdata);
                 return;
@@ -506,7 +555,7 @@ public class SheepBank : Mz_BaseScene {
                 return;
             }
 
-            if (upgradeInside_window_Obj.active == false)
+            if (upgradeInside_window_Obj.activeSelf == false)
             {
                 if (Application.isLoadingLevel == false && _onDestroyScene == false) {
 					_onDestroyScene = true;
@@ -526,7 +575,7 @@ public class SheepBank : Mz_BaseScene {
                 if (nameInput == NextButtonName) { upgradeInsideManager.GotoNextPage(); }
                 else if (nameInput == PreviousButtonName) { upgradeInsideManager.BackToPreviousPage(); }
                 else if (nameInput == YES_BUTTON_NAME) {
-                    if (MainMenu._HasNewGameEvent)
+                    if (Mz_StorageManage._HasNewGameEvent)
                     {
                         this.SetActivateTotorObject(false);
                         upgradeInsideManager.UserComfirm(); 
@@ -537,11 +586,19 @@ public class SheepBank : Mz_BaseScene {
                         upgradeInsideManager.UserComfirm(); 
 			    }
                 else if (nameInput == NO_BUTTON_NAME) {
-					if(MainMenu._HasNewGameEvent)
+                    if (Mz_StorageManage._HasNewGameEvent)
 						this.audioEffect.PlayOnecWithOutStop(this.audioEffect.wrong_Clip);
 					else 
-						upgradeInsideManager.UnActiveComfirmationWindow(); 
-				}
+						upgradeInsideManager.UnActiveComfirmationWindow();
+                }
+                else if (nameInput == depositIcon.name)
+                {
+                    iTween.MoveTo(upgradeInside_window_Obj.gameObject, moveUp_hashdata);
+                    iTween.StopByName(depositIcon.gameObject, "ShakeDepositIcon");
+                    depositIcon.SetActive(false);
+
+                    StartCoroutine_Auto(this.WaitForHookUPDepositFunction());
+                }
                 else
                 {
 				    //<@-- Handle other name input.
@@ -589,7 +646,7 @@ public class SheepBank : Mz_BaseScene {
 
     private IEnumerator ActiveUpgradeInsideForm()
     {
-		upgradeInside_window_Obj.SetActiveRecursively (true);
+		upgradeInside_window_Obj.SetActive(true);
 
         while (upgradeInsideManager._isInitialize == false)
         {
@@ -620,8 +677,9 @@ public class SheepBank : Mz_BaseScene {
         audioEffect.PlayOnecWithOutStop(audioEffect.calc_clip);
 
         currentGameStatus = GameSceneStatus.ShowDepositForm;
-		
-		if(MainMenu._HasNewGameEvent) {
+
+        if (Mz_StorageManage._HasNewGameEvent)
+        {
 			this.CreateDepositMoneyTutorEvent();			
 		}
     }
@@ -629,7 +687,8 @@ public class SheepBank : Mz_BaseScene {
 	{
 		resultValue = calculatorBeh.GetDisplayResultTextToInt();
 
-		if(MainMenu._HasNewGameEvent) {   //<@-- Has nawgame tutor event.
+        if (Mz_StorageManage._HasNewGameEvent)
+        {   //<@-- Has nawgame tutor event.
 			if(resultValue != 1300) {
 				calculatorBeh.ClearCalcMechanism();		
 				audioEffect.PlayOnecWithOutStop(audioEffect.wrong_Clip);
@@ -734,5 +793,18 @@ public class SheepBank : Mz_BaseScene {
 		passbookAccountBalance_textmesh.text = Mz_StorageManage.AccountBalance.ToString();
 		passbookAccountBalance_textmesh.Commit();
 	}
+
+    internal void CreateDepositIcon()
+    {
+        depositIcon.SetActive(true);
+        iTween.ShakePosition(depositIcon.gameObject,
+            iTween.Hash("name", "ShakeDepositIcon", "amount", new Vector3(1.5f, 1.5f, 0f), "time", 1f, "looptype", iTween.LoopType.pingPong));
+    }
+
+    IEnumerator WaitForHookUPDepositFunction()
+    {
+        yield return new WaitForSeconds(0.8f);
+        this.OnInput(DEPOSIT_BUTTON_NAME);
+    }
 }
 

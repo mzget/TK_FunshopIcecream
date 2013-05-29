@@ -1,71 +1,101 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class IcecreamTankBeh : ObjectsBeh {
-	const string Icecream_ResourcePath = "Goods/GreenTea_icecream";
-    	
-	private GameObject icecream_Instance;
-	private GoodsBeh icecreamBeh;
-	private Vector3 icecreamPos = new Vector3(-20f, 55f, 0f);
-
-    private SushiShop stageManager;
 	
-	// Use this for initialization
-	protected override void Start () {
-		
-		base.Start();
+	private static IcecreamTankBeh instance;
+	public static IcecreamTankBeh Instance {
+		get {
+			if(instance == null) {
+				instance = Shop.Instance.icecreamTank;
+			}
+			return instance;
+		}
+	}
+	public const int AMOUNT_OF_ICECREAM_PRODUCT = 10;
+    
+    public tk2dAnimatedSprite lidTankAnimation;
+	private bool _isOpen = false;
+	
+	public tk2dAnimatedSprite[] scoop_icecreams;
+	public BlockIcecreamBeh[] block_icecreams;
+	internal Dictionary<string, int> dict_nameOfIcecreamBlock = new Dictionary<string, int>() {
+		{"strawberry_icecream_block", 0}, 
+		{"chocolate_icecream_block", 1},
+		{"vanilla_icecream_block", 2},
+		{"mint_icecream_block", 3},
+		{"greentea_icecream_block", 4},
+		{"lemon_icecream_block", 5},
+		{"chocolatechip_icecream_block", 6},
+		{"orange_icecream_block", 7},
+		{"coffee_icecream_block", 8},
+		{"bringcherry_icecream_block", 9},
+	};
 
-        stageManager = baseScene.GetComponent<SushiShop>();
+	// Use this for initialization
+    protected override void Start()
+    {
+        base.Start();
+		SetActivateScoopIcecream(false);
+		StartCoroutine_Auto(this.IE_SetActiveIcecreamBlock());
+    }
+	
+	private void SetActivateScoopIcecream(bool p_active) {
+		foreach (tk2dAnimatedSprite item in scoop_icecreams) {
+			item.gameObject.SetActive(p_active);
+		}
+	}
+
+	internal IEnumerator IE_SetActiveIcecreamBlock ()
+	{
+		foreach(BlockIcecreamBeh item in block_icecreams) {
+			if(ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(item.gameObject.name) == false)
+				item.gameObject.SetActive(false);
+			else 
+				item.gameObject.SetActive(true);
+		}
+		
+		yield return null;
+	}
+	
+	private void SetActivateTank() {
+		if(_isOpen == false) {
+			lidTankAnimation.Play("OpenTank");
+			_isOpen = true;
+		}
+		else if(_isOpen == true) {
+			lidTankAnimation.Play("CloseTank");
+			_isOpen = false;
+		}
+	}
+	
+	// Update is called once per frame
+    protected override void Update()
+    {
+        base.Update();
+    }
+
+	public void Handle_input (string p_name)
+	{
+		Debug.Log("IcecreamTankBeh : Handle_input() : " + p_name);
+		 
+		if(p_name == "LidIcecreamTank") {
+			this.SetActivateTank();
+		}
+		else {
+			int i = dict_nameOfIcecreamBlock[p_name];
+			scoop_icecreams[i].gameObject.SetActive(true);
+			scoop_icecreams[i].Play();
+			scoop_icecreams[i].animationCompleteDelegate = (sprite, clipId) => {
+				SetActivateScoopIcecream(false);
+			};
+		}
 	}
 
     protected override void OnTouchDown()
     {
-        if(icecream_Instance == null) {
-            this.animatedSprite.Play();
-			animatedSprite.animationCompleteDelegate = delegate(tk2dAnimatedSprite sprite, int clipId)
-			{
-				icecream_Instance = Instantiate(Resources.Load(Icecream_ResourcePath, typeof(GameObject))) as GameObject;
-				icecream_Instance.transform.position = icecreamPos;
-				icecream_Instance.gameObject.name = GoodDataStore.FoodMenuList.GreenTea_icecream.ToString();
-				
-				icecreamBeh = icecream_Instance.GetComponent<GoodsBeh>();
-                icecreamBeh.costs = stageManager.goodDataStore.FoodDatabase_list[(int)GoodDataStore.FoodMenuList.GreenTea_icecream].costs;
-				icecreamBeh._canDragaable = true;
-				icecreamBeh.GoodsBeh_putObjectOnTray_Event = icecreamBeh_putObjectOnTray_Event;
-				icecreamBeh.ObjectsBeh_destroyObj_Event = icecreamBeh_destroyObj_Event;
-			};
-			// Play sound effect.
-			baseScene.audioEffect.PlayOnecWithOutStop(baseScene.soundEffect_clips[1]);
-		}
-
-		base.OnTouchDown();
-    }
-
-	void icecreamBeh_putObjectOnTray_Event (object sender, GoodsBeh.PutGoodsToTrayEventArgs e)
-	{		
-		GoodsBeh obj = sender as GoodsBeh;
-		if (stageManager.foodTrayBeh.goodsOnTray_List.Contains (obj) == false && stageManager.foodTrayBeh.goodsOnTray_List.Count<FoodTrayBeh.MaxGoodsCapacity) {
-			stageManager.foodTrayBeh.goodsOnTray_List.Add (obj);			
-			stageManager.foodTrayBeh.ReCalculatatePositionOfGoods();
-
-			//<!-- Setting original position.
-			obj.originalPosition = obj.transform.position;
-			
-			icecreamBeh = null;
-			icecream_Instance = null;
-		} else {
-			Debug.LogWarning("Goods on tray have to max capacity.");
-
-			obj.transform.position = obj.originalPosition;
-		}
-	}
-
-    private void icecreamBeh_destroyObj_Event(object sender, System.EventArgs e) {
-		GoodsBeh goods = sender as GoodsBeh;
-		Mz_StorageManage.AvailableMoney -= goods.costs;
-		stageManager.CreateDeductionsCoin (goods.costs);
-        baseScene.ReFreshAvailableMoney();
-		stageManager.foodTrayBeh.goodsOnTray_List.Remove(goods);
-		stageManager.foodTrayBeh.ReCalculatatePositionOfGoods();
+		this.SetActivateTank();
+        base.OnTouchDown();
     }
 }

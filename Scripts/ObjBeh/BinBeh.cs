@@ -9,9 +9,8 @@ public class BinBeh : ObjectsBeh {
 	string animationName_002;
 
 	// Use this for initialization
-    protected override void Start()
-    {
-        base.Start();
+    protected override void Start() {
+		base.Start();
 		
 		animationName_001 = OpenAnim;
 		animationName_002 = CloseAnim;
@@ -20,6 +19,7 @@ public class BinBeh : ObjectsBeh {
 	public void PlayOpenAnimation() {
         animatedSprite.Play(animationName_001);	
 		animatedSprite.animationCompleteDelegate = animationCompleteDelegate;
+        Shop.Instance.audioEffect.PlayOnecWithOutStop(Shop.Instance.soundEffect_clips[1]);
 	}
 	
 	public void animationCompleteDelegate(tk2dAnimatedSprite sprite, int clipId) {

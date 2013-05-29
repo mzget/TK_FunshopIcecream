@@ -151,57 +151,60 @@ public class UpgradeOutsideManager : MonoBehaviour
 
     public void InitializeDecorationObjects()
     {
+		// 255 is default .
         if(Mz_StorageManage.Roof_id == 255) {
-            roofDecoration_Sprite.gameObject.active = true;
+            roofDecoration_Sprite.gameObject.SetActive(true);
+			roofDecoration_Sprite.spriteId = roofDecoration_Sprite.GetSpriteIdByName("roof_0000");
         }
         else {
-			roofDecoration_Sprite.gameObject.active = true;
+			roofDecoration_Sprite.gameObject.SetActive(true);
             roofDecoration_Sprite.spriteId = roofDecoration_Sprite.GetSpriteIdByName(roofData.NameSpecify[Mz_StorageManage.Roof_id]);
             roofDecoration_Sprite.gameObject.transform.localPosition = roofData.offsetPosY[Mz_StorageManage.Roof_id]; 
         }
 
         if (Mz_StorageManage.Awning_id == 255)
         {
-            awningDecoration_Sprite.gameObject.active = true;
+            awningDecoration_Sprite.gameObject.SetActive(true);
         }
         else {
-			awningDecoration_Sprite.gameObject.active = true;
+			awningDecoration_Sprite.gameObject.SetActive(true);
             awningDecoration_Sprite.spriteId = awningDecoration_Sprite.GetSpriteIdByName(awningData.NameSpecify[Mz_StorageManage.Awning_id]);
         }
 
         if(Mz_StorageManage.Table_id == 255) {
-            tableDecoration_Sprite.gameObject.active = false;
+            tableDecoration_Sprite.gameObject.SetActive(false);
         }
         else {
-			tableDecoration_Sprite.gameObject.active = true;
+			tableDecoration_Sprite.gameObject.SetActive(true);
 			tableDecoration_Sprite.spriteId = tableDecoration_Sprite.GetSpriteIdByName(tableData.NameSpecify[Mz_StorageManage.Table_id]);
         }
 
         if(Mz_StorageManage.Accessory_id == 255) {
-            accessories_Sprite.gameObject.active = false;
+            accessories_Sprite.gameObject.SetActive(false);
         }
         else {
-			accessories_Sprite.gameObject.active = true;
+			accessories_Sprite.gameObject.SetActive(true);
 			accessories_Sprite.spriteId = accessories_Sprite.GetSpriteIdByName(accessoriesData.NameSpeccify[Mz_StorageManage.Accessory_id]);
         }
     }
 
 	public void HaveNoneCommand ()
 	{
-		if (currentStateBehavior == StateBehavior.activeRoof) {
-			roofDecoration_Sprite.gameObject.active = false;
+		if (currentStateBehavior == StateBehavior.activeRoof) {		
 			Mz_StorageManage.Roof_id = 255;
+            roofDecoration_Sprite.gameObject.SetActive(true);
+			roofDecoration_Sprite.spriteId = roofDecoration_Sprite.GetSpriteIdByName("roof_0000");	
 		}
         else if (currentStateBehavior == StateBehavior.activeAwning) {
-            awningDecoration_Sprite.gameObject.active = false;
+            awningDecoration_Sprite.gameObject.SetActive(false);
             Mz_StorageManage.Awning_id = 255;
 		} 
         else if(currentStateBehavior == StateBehavior.activeTable) {
-            tableDecoration_Sprite.gameObject.active = false;
+            tableDecoration_Sprite.gameObject.SetActive(false);
             Mz_StorageManage.Table_id = 255;
         } 
         else if(currentStateBehavior == StateBehavior.activeAccessories) {
-            accessories_Sprite.gameObject.active = false;
+            accessories_Sprite.gameObject.SetActive(false);
             Mz_StorageManage.Accessory_id = 255;
         }
 	}
@@ -307,7 +310,7 @@ public class UpgradeOutsideManager : MonoBehaviour
             upgrade_Objs[i].collider.enabled = true;
             upgrade_sprites[i].color = Color.white;
             upgrade_sprites[i].spriteId = upgrade_sprites[0].GetSpriteIdByName(petData.NameSpecify[i]);
-            itemPrice_textmesh[i].gameObject.active = false;
+            itemPrice_textmesh[i].gameObject.SetActive(false);
 
             if(CanAlimentPet_id_list.Contains(i) == false) {
                 upgrade_sprites[i].color = Color.grey;
@@ -742,35 +745,37 @@ public class UpgradeOutsideManager : MonoBehaviour
         roofDecoration_Sprite.gameObject.transform.localPosition = roofData.offsetPosY[active_id]; 
 		Mz_StorageManage.Roof_id = active_id;
 
-		sceneController.PlaySoundRejoice();
+        sceneController.PlaySoundRejoice();
+        sceneController.PlayAppreciateAudioClip(true);
 	}
 
 	void DisplayAwning (int active_id)
 	{
 		awningDecoration_Sprite.gameObject.active = true;
 		awningDecoration_Sprite.spriteId = awningDecoration_Sprite.GetSpriteIdByName(awningData.NameSpecify[active_id]);
-		Mz_StorageManage.Awning_id = active_id;
+        Mz_StorageManage.Awning_id = active_id;
 
-		sceneController.PlaySoundRejoice();
+        sceneController.PlaySoundRejoice();
+        sceneController.PlayAppreciateAudioClip(true);
 	}
 
 	void DisplayTable (int active_id)
 	{		
 		tableDecoration_Sprite.gameObject.active = true;
 		tableDecoration_Sprite.spriteId = tableDecoration_Sprite.GetSpriteIdByName(tableData.NameSpecify[active_id]);
-		Mz_StorageManage.Table_id = active_id;
+        Mz_StorageManage.Table_id = active_id;
 
-		sceneController.PlaySoundRejoice();
+        sceneController.PlaySoundRejoice();
+        sceneController.PlayAppreciateAudioClip(true);
 	}
 
 	void DisplayAccessories (int targetItem_id)
 	{
 		accessories_Sprite.gameObject.active = true;
 		accessories_Sprite.spriteId = accessories_Sprite.GetSpriteIdByName(accessoriesData.NameSpeccify[targetItem_id]);
-		Mz_StorageManage.Accessory_id = targetItem_id;
+        Mz_StorageManage.Accessory_id = targetItem_id;
 
-		sceneController.PlaySoundRejoice();
+        sceneController.PlaySoundRejoice();
+        sceneController.PlayAppreciateAudioClip(true);
 	}
-
 }
-

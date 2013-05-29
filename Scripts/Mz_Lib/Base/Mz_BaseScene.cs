@@ -4,7 +4,16 @@ using System.Collections;
 using System.Collections.Generic;
 
 public class Mz_BaseScene : MonoBehaviour {
-    
+    private static Mz_BaseScene _instance;
+    public static Mz_BaseScene GetInstance {
+        get {
+            if (_instance == null) {
+                GameObject main = GameObject.FindGameObjectWithTag("GameController");
+                _instance = main.GetComponent<Mz_BaseScene>();
+            }
+            return _instance;
+        }
+    }
     public enum SceneNames { none = 0, LoadingScene = 1, MainMenu, WaitForStart, Town, Shop, Sheepbank, Dressing, DisplayReward, };
 	
     //<!-- Audio Manage.
@@ -16,8 +25,7 @@ public class Mz_BaseScene : MonoBehaviour {
     public AudioClip background_clip;
     public List<AudioClip> description_clips = new List<AudioClip>();
     public List<AudioClip> soundEffect_clips = new List<AudioClip>();
-//  public List<AudioClip> appreciate_Clips = new List<AudioClip>();
-//	public List<AudioClip> warning_Clips = new List<AudioClip>();
+    public Base_AudioManager audioManager;
 	
 	#region <@-- Detect Touch and Input Data Fields.
 
@@ -29,7 +37,7 @@ public class Mz_BaseScene : MonoBehaviour {
 	private Vector3 currentCameraPos = new Vector3(0, -13f, -20);
     public bool _isDragMove = false;
 	internal Mz_SmartDeviceInput smartDeviceInput;
-	public ExtendsStorageManager extendsStorageManager;
+	public ExtendsSaveManager extendsStorageManager;
 	private HUDFPS hudFPS_Trace;
 
 	#endregion
@@ -76,8 +84,8 @@ public class Mz_BaseScene : MonoBehaviour {
 //		this.gameObject.AddComponent<HUDFPS> ();
 //		hudFPS_Trace = this.gameObject.GetComponent<HUDFPS>();
 
-		this.gameObject.AddComponent<ExtendsStorageManager> ();
-        extendsStorageManager = this.GetComponent<ExtendsStorageManager>();
+		this.gameObject.AddComponent<ExtendsSaveManager> ();
+        extendsStorageManager = this.GetComponent<ExtendsSaveManager>();
 
         this.gameObject.AddComponent<Mz_SmartDeviceInput>();
         smartDeviceInput = this.gameObject.GetComponent<Mz_SmartDeviceInput>();

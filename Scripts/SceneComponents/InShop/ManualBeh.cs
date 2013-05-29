@@ -2,24 +2,18 @@ using UnityEngine;
 using System.Collections;
 
 public class ManualBeh : ObjectsBeh {
-	private readonly string[] arr_titleImgName = new string[12] {
-		GoodDataStore.FoodMenuList.Salmon_sushi.ToString(),
-		GoodDataStore.FoodMenuList.Skipjack_tuna_sushi.ToString(),
-		GoodDataStore.FoodMenuList.Sweetened_egg_sushi.ToString(),
-		GoodDataStore.FoodMenuList.Eel_sushi.ToString(),
-		GoodDataStore.FoodMenuList.Fatty_tuna_sushi.ToString(),
-		GoodDataStore.FoodMenuList.Spicy_shell_sushi.ToString(),
-		GoodDataStore.FoodMenuList.Crab_sushi.ToString(),
-		GoodDataStore.FoodMenuList.Octopus_sushi.ToString(),
-		GoodDataStore.FoodMenuList.Prawn_sushi.ToString(),
-		GoodDataStore.FoodMenuList.Pickling_cucumber_filled_maki.ToString(),
-		GoodDataStore.FoodMenuList.Prawn_brown_maki.ToString(),
-		GoodDataStore.FoodMenuList.Roe_maki.ToString(),
+	private readonly string[] arr_titleImgName = new string[] {
+		GoodDataStore.FoodMenuList.IcecreamFloat.ToString(),
+		GoodDataStore.FoodMenuList.ChocolateChip_ChocolateSundae.ToString(),
+		GoodDataStore.FoodMenuList.BringCherry_StrawberrySundae.ToString(),
+		GoodDataStore.FoodMenuList.BananaSplitSundae_strawberry.ToString(),
+		GoodDataStore.FoodMenuList.TakeawayIcecream_vanilla_strawberryJam_sugar_strawberryFruit_banana.ToString(),
+		GoodDataStore.FoodMenuList.FreshyFreeze_C_strawberry.ToString(),
 	};
 
-    private readonly string[] arr_foodOrderName = new string[12] {
-        "Salmon_form","SkipjackTuna_form","SweetenedEgg_form","Eel_form","FattyTuna_form","SpicyShell_form",
-        "Crab_form","Octopus_form","Prawn_form","Cucumber_maki_form","PrawnBrownMaki_form","RoeMaki_form",
+    private readonly string[] arr_foodOrderName = new string[] {
+        "icecreamFloat_form", "chocolatesundae_form", "strawberrysundae_form",
+		"bananasplitsundae_form","takeawayicecream_form","freshyfreezeicecream_form",
     };
 
     public GameObject manualCookbook;
@@ -32,14 +26,12 @@ public class ManualBeh : ObjectsBeh {
     public tk2dTextMesh cookbookPage_textmesh;
 
     private int currentPage_id = 0;
-    private const int MaxPageNumber = 4;
+    private const int MaxPageNumber = 2;
 
 
 	// Use this for initialization
-    protected override void Start()
+    private new void Start()
     {
-        base.Start();
-
         cookbook_animatedSprite = manualCookbook.GetComponent<tk2dAnimatedSprite>();
     }
 	
@@ -57,15 +49,15 @@ public class ManualBeh : ObjectsBeh {
     }
 
     private void ActiveCookbookObjectGroup() {
-        manualCookbook.SetActiveRecursively(true);
-        baseScene.plane_darkShadow.active = true;
+        manualCookbook.SetActive(true);
+        baseScene.plane_darkShadow.SetActive(true);
 		this.Setting_CookbookOrder ();
     }
 
     private void UnActiveCookbookObjectGroup()
     {
-        manualCookbook.SetActiveRecursively(false);
-        baseScene.plane_darkShadow.active = false;
+        manualCookbook.SetActive(false);
+        baseScene.plane_darkShadow.SetActive(false);
     }
 
     internal void Setting_CookbookOrder() {
@@ -129,8 +121,8 @@ public class ManualBeh : ObjectsBeh {
 			};
         }
         else if (nameInput == "Close_button") {
-            SushiShop shop = baseScene.GetComponent<SushiShop>();
-            shop.currentGamePlayState = SushiShop.GamePlayState.Ordering;
+            Shop shop = baseScene.GetComponent<Shop>();
+            shop.currentGamePlayState = Shop.GamePlayState.Ordering;
 
             this.UnActiveCookbookObjectGroup();
         }
