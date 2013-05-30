@@ -116,7 +116,7 @@ public class GoodsBeh : ObjectsBeh {
     {
         base.OnTouchBegan();
 
-        this.transform.localScale = new Vector3(1.2f, 1.2f, 1);
+        this.transform.localScale = new Vector3(1.5f, 1.5f, 1);
         baseScene.audioEffect.PlayOnecWithOutStop(baseScene.audioEffect.pop_clip);
     }
 
@@ -140,7 +140,7 @@ public class GoodsBeh : ObjectsBeh {
     {
         base.OnTouchEnded();
 
-        this.transform.localScale = new Vector3(1f, 1f, 1);
+        this.transform.localScale = originalScale;
     }
 
     public override void OnDispose()

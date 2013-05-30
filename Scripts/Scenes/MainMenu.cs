@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 using System.Collections;
+using Holoville.HOTween;
 
 public class MainMenu : Mz_BaseScene {
 	
@@ -44,15 +45,20 @@ public class MainMenu : Mz_BaseScene {
     }
 	
     public TK_news tknewsManager;	
+	public Mz_GuiButtonBeh tk_news_button;
     internal void SetActivateTKNews(bool activeState) {
         if (activeState) {
             plane_darkShadow.SetActive(true);
+			tknewsManager.gameObject.SetActive(true);
             iTween.MoveTo(tknewsManager.gameObject, iTween.Hash("y", 0f, "islocal", true, "time", 1f, "oncomplete", "ShakeFacebookButton", "oncompletetarget", tknewsManager.gameObject, "easetype", iTween.EaseType.easeOutBounce));
         }
         else {
             plane_darkShadow.SetActive(false);
             tknewsManager.StopShakeFacebookButton();
-            iTween.MoveTo(tknewsManager.gameObject, iTween.Hash("y", 200f, "islocal", true, "time", 1f, "easetype", iTween.EaseType.easeOutBounce));
+			HOTween.To(tknewsManager.transform, 1f, 
+			new TweenParms().Prop("localPosition", new Vector3(0.3f, 200, -11)).Ease(EaseType.EaseInOutElastic).OnComplete((p_callbackData) => {
+				tknewsManager.gameObject.SetActive(false);
+			}));
         }
     }
         
@@ -115,16 +121,18 @@ public class MainMenu : Mz_BaseScene {
         iTween.MoveTo(mainmenu_Group.gameObject, moveDownTransform_Data);
 		iTween.MoveTo(options_group_transform.gameObject, iTween.Hash("y", 85f, "time", 1f, "easetype",  iTween.EaseType.easeOutSine));
 
-        newgame_Group.gameObject.SetActiveRecursively(false);
+        newgame_Group.gameObject.SetActive(false);
 		initializeNewShop = initializeNewGame_Group.GetComponent<InitializeNewShop>();
-        initializeNewGame_Group.gameObject.SetActiveRecursively(false);
-        loadgame_Group.gameObject.SetActiveRecursively(false);
-        back_button.gameObject.active = false;
+        initializeNewGame_Group.gameObject.SetActive(false);
+        loadgame_Group.gameObject.SetActive(false);
+        back_button.gameObject.SetActive(false);
 		
         iTween.MoveTo(flyingBird_group, iTween.Hash("x", 190f, "time", 16f, "easetype", iTween.EaseType.easeInSine, "looptype", iTween.LoopType.loop));
 		iTween.MoveTo(movingCloud_Objs, iTween.Hash("x", -200f, "time", 16f, "easetype", iTween.EaseType.easeInOutSine, "looptype", iTween.LoopType.pingPong));
 
         Mz_StorageManage._HasNewGameEvent = false;
+		
+		tk_news_button.click_event += Handle_Tk_news_button_buttonDown_event;
 	}
 	
 	protected IEnumerator PreparingAudio ()
@@ -448,7 +456,7 @@ public class MainMenu : Mz_BaseScene {
     }
 
     //<!-- Show save game slot. If slot is full.
-     private void ShowSaveGameSlot(bool _toSaveGame)
+    private void ShowSaveGameSlot(bool _toSaveGame)
     {
         if (_toSaveGame) 
 		{   
@@ -546,7 +554,13 @@ public class MainMenu : Mz_BaseScene {
         }
         GUI.EndGroup();
     }
-
+	
+	
+	void Handle_Tk_news_button_buttonDown_event (object sender, EventArgs e)
+	{
+		this.SetActivateTKNews(true);
+	}
+	
     public override void OnInput(string nameInput)
     {
         base.OnInput(nameInput); 

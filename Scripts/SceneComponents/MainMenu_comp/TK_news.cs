@@ -7,7 +7,6 @@ public class TK_news : MonoBehaviour {
     private readonly int AmountOfPage = 2; 
     private int currentPage = 0;
 	
-	public Mz_GuiButtonBeh tk_news_button;
 	public Mz_GuiButtonBeh facebook_button;
 	public Mz_GuiButtonBeh close_button;
 	public Mz_GuiButtonBeh newsTag_button0;
@@ -40,8 +39,6 @@ public class TK_news : MonoBehaviour {
         currentPage = 0;
         this.SynchronizeNewsTag();
 		
-		
-		tk_news_button.click_event += Handle_Tk_news_button_buttonDown_event;
 		close_button.click_event += HandleClose_button_click_event;
 		facebook_button.click_event += HandleFacebook_button_click_event;
 		newsTag_button0.click_event += HandleNewsTag_button_click_event;
@@ -72,11 +69,6 @@ public class TK_news : MonoBehaviour {
     {
 		Application.OpenURL(TK_news.FACEBOOK_FANPAGE_URL);
     }
-
-	void Handle_Tk_news_button_buttonDown_event (object sender, EventArgs e)
-	{
-		MainMenu.GetInstance.SetActivateTKNews(true);
-	}
 
 	void HandleClose_button_click_event (object sender, System.EventArgs e)
 	{

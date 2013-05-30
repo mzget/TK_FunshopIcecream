@@ -42,9 +42,11 @@ public class FreshyFreezeBeh : ProductAssemble {
         popup.click_event += Handle_popup_click_event;
 	}
 
-	void Handle_popup_click_event (object sender, System.EventArgs e)
+	private void Handle_popup_click_event (object sender, System.EventArgs e)
 	{
-		Debug.Log("Clear");
+        this.RemoveEventsHandle();
+		this.Initialize();
+		this.SetActiveClearPopup(false);
 	}
 
     private void Initialize()
@@ -147,7 +149,6 @@ public class FreshyFreezeBeh : ProductAssemble {
     }
 
 	private void Handle_Step3AnimationComplete(tk2dAnimatedSprite sprite, int clipId) {
-
 		layer3.animationCompleteDelegate -= Handle_Step3AnimationComplete;
 		IngredientController.Instance.blueberry_fruit.active_event -= Handle_jam_active_event;
 		IngredientController.Instance.cherry_fruit.active_event -= Handle_jam_active_event;
@@ -193,9 +194,18 @@ public class FreshyFreezeBeh : ProductAssemble {
 	private void Handle_Step4AnimatedComplete(tk2dAnimatedSprite sprite, int clipId) {
 		layer4.animationCompleteDelegate -= Handle_Step4AnimatedComplete;
 		IngredientController.Instance.whipCream.active_event += Handle_WaitForWhipCreamActive;
+		IngredientController.Instance.whipCream.animatedSpritePlayCompleteEvent += Handle_whipCreamanimatedSpritePlayCompleteEvent;
+	}
+
+	void Handle_whipCreamanimatedSpritePlayCompleteEvent (object sender, System.EventArgs e)
+	{
+		IngredientController.Instance.whipCream.animatedSpritePlayCompleteEvent -= Handle_whipCreamanimatedSpritePlayCompleteEvent;
+		
+        IngredientController.Instance.whipCream.transform.position = IngredientController.Instance.whipCream.originalPosition;
 	}
 
 	void Handle_WaitForWhipCreamActive (object sender, IngredientBeh.HandleNameArgs e) {
+        IngredientController.Instance.whipCream.transform.position = this.transform.position + new Vector3(0, 20, -6);
 		layer6.gameObject.SetActive(true);
 		layer6.Play();
 
@@ -216,8 +226,8 @@ public class FreshyFreezeBeh : ProductAssemble {
 		string goodsName = this.GetGoodsName();
 		product = GoodsFactory.Instance.GetGoods(goodsName);
 		product.gameObject.name = goodsName;
-		product.SetOriginTransform(productPos, Vector3.zero);
 		product.transform.position = productPos;
+		product.transform.localScale = new Vector3(1.2f, 1.2f, 1);
 		product._canDragaable = true;
 		product.costs = Shop.Instance.goodDataStore.dict_FoodDatabase[goodsName].costs;
 		product.destroyObj_Event += product.Handle_DestroyProduct_Event;
@@ -254,7 +264,7 @@ public class FreshyFreezeBeh : ProductAssemble {
 	{
 		base.OnTouchStationary ();
 		
-		this.ShowClearPopup(true);
+		this.SetActiveClearPopup(true);
 		Mz_BaseScene.GetInstance.audioEffect.PlayOnecSound(Mz_BaseScene.GetInstance.audioEffect.pop_clip);
 	}
 	
@@ -262,18 +272,12 @@ public class FreshyFreezeBeh : ProductAssemble {
 	{
 		base.OnTouchOther();
 
-		this.ShowClearPopup(false);
+		this.SetActiveClearPopup(false);
 	}
 	
 	#endregion
-	
-	// Update is called once per frame
-	protected override void Update ()
-	{
-		base.Update ();
-	}
 
-	protected void ShowClearPopup(bool state)
+	protected void SetActiveClearPopup(bool state)
 	{
 		popup.gameObject.SetActive(state);
 	}
@@ -299,4 +303,22 @@ public class FreshyFreezeBeh : ProductAssemble {
 			obj.transform.position = obj.originalPosition;
 		}
 	}
+
+    private void RemoveEventsHandle() {
+        layer1.animationCompleteDelegate -= Handle_Layer1AnimatedComplete;
+        IngredientController.Instance.chocolateJam.active_event -= Handle_jam_active_event;
+        IngredientController.Instance.strawberryJam.active_event -= Handle_jam_active_event;
+        layer3.animationCompleteDelegate -= Handle_Step3AnimationComplete;
+        IngredientController.Instance.blueberry_fruit.active_event -= Handle_jam_active_event;
+        IngredientController.Instance.cherry_fruit.active_event -= Handle_jam_active_event;
+        IngredientController.Instance.dragon_fruit.active_event -= Handle_jam_active_event;
+        IngredientController.Instance.kiwi_fruit.active_event -= Handle_jam_active_event;
+        IngredientController.Instance.mango_fruit.active_event -= Handle_jam_active_event;
+        IngredientController.Instance.strawberry_fruit.active_event -= Handle_jam_active_event;
+        layer3.animationCompleteDelegate -= Handle_Layer3AnimatedComplete;
+        layer4.animationCompleteDelegate -= Handle_Step4AnimatedComplete;
+        IngredientController.Instance.whipCream.active_event -= Handle_WaitForWhipCreamActive;
+		IngredientController.Instance.whipCream.animatedSpritePlayCompleteEvent -= Handle_whipCreamanimatedSpritePlayCompleteEvent;
+        IngredientController.Instance.almondPowder.active_event -= Handle_WaitForAlmondPowderActive;
+    }
 }

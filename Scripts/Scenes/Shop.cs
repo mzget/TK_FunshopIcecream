@@ -532,7 +532,7 @@ public class Shop : Mz_BaseScene {
 		
 		handTutor = Instantiate(Resources.Load("Tutor_Objs/HandTutor", typeof(GameObject))) as GameObject;
 		handTutor.transform.parent = cameraTutor_Obj.transform;
-		handTutor.transform.localPosition = new Vector3(30f, 75f, 3f);
+		handTutor.transform.localPosition = new Vector3(30f, 90, 3f);
 		handTutor.transform.localScale = Vector3.one;
 		
 		GameObject tutorText_0 = Instantiate(Resources.Load("Tutor_Objs/Tutor_description", typeof(GameObject))) as GameObject;
@@ -543,7 +543,7 @@ public class Shop : Mz_BaseScene {
 		base.tutorDescriptions = new List<GameObject>();
 		tutorDescriptions.Add(tutorText_0);
 		//<@-- Animated hand with tweening.
-		iTween.MoveTo(handTutor.gameObject, iTween.Hash("y", 65f, "Time", .5f, "easetype", iTween.EaseType.easeInSine, "looptype", iTween.LoopType.pingPong));
+		iTween.MoveTo(handTutor.gameObject, iTween.Hash("y", 75f, "Time", .5f, "easetype", iTween.EaseType.easeInSine, "looptype", iTween.LoopType.pingPong));
 	}
 
 	void CreateGreetingCustomerTutorEvent()
@@ -564,9 +564,9 @@ public class Shop : Mz_BaseScene {
 		shopTutor.goaway_button_obj.SetActive(false);
 //		darkShadowPlane.transform.position += Vector3.forward * 3;
 		
-		handTutor.transform.localPosition = new Vector3(-62f, -13f, 3f);
+		handTutor.transform.localPosition = new Vector3(-32f, -5f, 3f);
 		
-		tutorDescriptions[0].transform.localPosition = new Vector3(-45f, -17f, 3f);
+		tutorDescriptions[0].transform.localPosition = new Vector3(-20f, -10f, 3f);
 		tutorDescriptions[0].GetComponent<tk2dTextMesh>().text = "ACCEPT ORDERS";
 		tutorDescriptions[0].GetComponent<tk2dTextMesh>().Commit();
 		//<@-- Animated hand with tweening.
@@ -638,15 +638,15 @@ public class Shop : Mz_BaseScene {
 
 		audioDescribe.PlayOnecSound(description_clips[3]);
 
-		handTutor.transform.localPosition = new Vector3(-60f, -15f, 3f);
+		handTutor.transform.localPosition = new Vector3(-25f, -5f, 3f);
 		tk2dSprite hand_sprite = handTutor.GetComponent<tk2dSprite>();
 		hand_sprite.spriteId = hand_sprite.GetSpriteIdByName("Hand_tutor");
 
-        tutorDescriptions[0].transform.localPosition = new Vector3(-40f, -20f, 3f);
+        tutorDescriptions[0].transform.localPosition = new Vector3(-10f, -20f, 3f);
         tutorDescriptions[0].GetComponent<tk2dTextMesh>().text = "CHECK ACCURACY";
         tutorDescriptions[0].GetComponent<tk2dTextMesh>().Commit();
         //<@-- Animated hand with tweening.
-        iTween.MoveTo(handTutor.gameObject, iTween.Hash("y", -5f, "Time", .5f, "easetype", iTween.EaseType.easeInSine, "looptype", iTween.LoopType.pingPong));
+        iTween.MoveTo(handTutor.gameObject, iTween.Hash("y", -20f, "Time", .5f, "easetype", iTween.EaseType.easeInSine, "looptype", iTween.LoopType.pingPong));
     }
 
     private void CreateBillingTutorEvent()
@@ -836,7 +836,7 @@ public class Shop : Mz_BaseScene {
         if (Mz_StorageManage._HasNewGameEvent)
         {
 			iTween.MoveTo(baseOrderUI_Obj.gameObject, 
-			              iTween.Hash("position", new Vector3(-85f, 6f, -12f), "islocal", true, "time", .5f, "easetype", iTween.EaseType.spring));
+			              iTween.Hash("position", new Vector3(-60f, 25f, -12f), "islocal", true, "time", .5f, "easetype", iTween.EaseType.spring));
 			
             if (shopTutor.currentTutorState == ShopTutor.TutorStatus.AcceptOrders) {
                 this.CreateAcceptOrdersTutorEvent();
@@ -848,7 +848,7 @@ public class Shop : Mz_BaseScene {
 		}
 		else {
 			iTween.MoveTo(baseOrderUI_Obj.gameObject, 
-		              iTween.Hash("position", new Vector3(-85f, 6f, -12f), "islocal", true, "time", .5f, "easetype", iTween.EaseType.spring));
+		              iTween.Hash("position", new Vector3(-60f, 25f, -12f), "islocal", true, "time", .5f, "easetype", iTween.EaseType.spring));
 		}
 
 		yield return new WaitForFixedUpdate();
@@ -870,7 +870,7 @@ public class Shop : Mz_BaseScene {
 			base.SetActivateTotorObject(false);
             
 			iTween.MoveTo(baseOrderUI_Obj.gameObject,
-                      iTween.Hash("position", new Vector3(-85f, -200f, 0f), "islocal", true, "time", 0.5f, "easetype", iTween.EaseType.linear));
+                      iTween.Hash("position", new Vector3(-60f, -200f, 0f), "islocal", true, "time", 0.5f, "easetype", iTween.EaseType.linear));
 
             if (shopTutor.currentTutorState == ShopTutor.TutorStatus.AcceptOrders)
             {
@@ -896,7 +896,7 @@ public class Shop : Mz_BaseScene {
         else
         {
             iTween.MoveTo(baseOrderUI_Obj.gameObject,
-                      iTween.Hash("position", new Vector3(-85f, -200f, 0f), "islocal", true, "time", 0.5f, "easetype", iTween.EaseType.linear));
+                      iTween.Hash("position", new Vector3(-60f, -200f, 0f), "islocal", true, "time", 0.5f, "easetype", iTween.EaseType.linear));
 
             yield return new WaitForSeconds(0.5f);
 
@@ -922,7 +922,7 @@ public class Shop : Mz_BaseScene {
 			greetingMessage_ObjGroup.SetActive(true);
             greetingMessage_ObjGroup.transform.localPosition = new Vector3(0,0,-12);
 			plane_darkShadow.SetActive(true);
-			iTween.ScaleTo(greetingMessage_ObjGroup, iTween.Hash("x", 1f, "y", 1f, "time", 0.5f, "easetype", iTween.EaseType.easeInSine));
+			iTween.ScaleTo(greetingMessage_ObjGroup, iTween.Hash("x", 1.25f, "y", 1.25f, "time", 0.5f, "easetype", iTween.EaseType.easeOutSine));
 		}
 		else {
 			iTween.ScaleTo(greetingMessage_ObjGroup, iTween.Hash("x", 0f, "y", 0f, "time", 0.5f, "easetype", iTween.EaseType.easeInExpo,

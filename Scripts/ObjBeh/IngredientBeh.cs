@@ -7,7 +7,13 @@ public class IngredientBeh : ObjectsBeh {
 	public class HandleNameArgs : EventArgs {
 		public string eventName;
 	};
-
+	
+	public event EventHandler animatedSpritePlayCompleteEvent;
+	private void OnanimtedSpritePlayComplete(EventArgs e) {
+		if(animatedSpritePlayCompleteEvent != null)
+			animatedSpritePlayCompleteEvent(this, e);
+	} 
+	
 	public event EventHandler<HandleNameArgs> active_event;
 	protected virtual void Onactive_event (HandleNameArgs e)
 	{
@@ -15,18 +21,16 @@ public class IngredientBeh : ObjectsBeh {
 		if (handler != null)
 			handler (this, e);
 	}
-	
-	// Update is called once per frame
-	protected override void Update ()
-	{
-		base.Update ();
-	}
 
 	protected override void OnTouchDown ()
 	{
 		this.Onactive_event(new HandleNameArgs() { eventName = this.name, });
-		if(animatedSprite != null) 
+		if(animatedSprite != null) { 
 			animatedSprite.Play();
+            animatedSprite.animationCompleteDelegate += (sprite, clipid) => { 
+                OnanimtedSpritePlayComplete(EventArgs.Empty);
+            };
+        }
 		
 		base.OnTouchDown ();
 	}

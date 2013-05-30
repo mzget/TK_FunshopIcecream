@@ -150,6 +150,7 @@ public class TakeawayIcecream : ProductAssemble {
         product = GoodsFactory.Instance.GetGoods(productName);
         product.gameObject.name = productName;
         product.transform.position = productPos;
+		product.transform.localScale = new Vector3(1.25f, 1.25f, 1);
         product._canDragaable = true;
         product.costs = Shop.Instance.goodDataStore.dict_FoodDatabase[productName].costs;
         product.destroyObj_Event += product.Handle_DestroyProduct_Event;
