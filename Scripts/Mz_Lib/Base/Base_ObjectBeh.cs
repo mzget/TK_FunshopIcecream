@@ -7,12 +7,17 @@ using System.Collections.Generic;
 /// last edit 2013-5-29
 /// </summary>
 public class Base_ObjectBeh : MonoBehaviour {
-    
+    	
+	protected class ImplementUserTouchOther {
+		public List<string> arr_exceptionObjectsName = new List<string>();
+	};
+	protected ImplementUserTouchOther implementUserTouchOther;
+	
     protected bool _OnTouchBegin = false;
 //	protected bool _OnTouchMove = false;
 	protected bool _OnTouchRelease = false;
 	private double time;
-    protected List<string> arr_exceptionObjectsName = new List<string>();
+
 	
 	
 	protected virtual void Start() { }
@@ -31,49 +36,53 @@ public class Base_ObjectBeh : MonoBehaviour {
         if (_OnTouchBegin && _OnTouchRelease) {
             OnTouchDown();
         }
-
-        if (Application.platform == RuntimePlatform.IPhonePlayer || Application.platform == RuntimePlatform.Android) {
-            if (Input.touchCount >= 1) {
-                Touch touch = Input.GetTouch(0);
+	
+	    if (Application.platform == RuntimePlatform.IPhonePlayer || Application.platform == RuntimePlatform.Android) {
+	        if (Input.touchCount >= 1) {
+	            Touch touch = Input.GetTouch(0);
 				if(touch.phase == TouchPhase.Began) {
-					Ray ray = Camera.main.ScreenPointToRay(touch.position);
-					RaycastHit rayHit ;
-					if(Physics.Raycast(ray, out rayHit, Mathf.Infinity)) {
-						if (arr_exceptionObjectsName.Contains(rayHit.collider.name) == false)
+                    if(implementUserTouchOther != null) {
+					    Ray ray = Camera.main.ScreenPointToRay(touch.position);
+					    RaycastHit rayHit ;
+					    if(Physics.Raycast(ray, out rayHit, Mathf.Infinity)) {
+						    if (implementUserTouchOther.arr_exceptionObjectsName.Contains(rayHit.collider.name) == false)
+		                    {
+		                        this.OnTouchOther();
+		                    }
+					    }
+					    else {
+						    this.OnTouchOther();
+					    }
+                    }
+				}
+					
+	            if (touch.phase == TouchPhase.Ended) {
+	                this.OnTouchEnded();
+	            }
+	        }
+	    }
+	    else if (Application.platform == RuntimePlatform.WindowsEditor) {
+	        if (Input.GetMouseButtonUp(0)) {
+	            this.OnTouchEnded();
+	        }
+				
+			if(Input.GetMouseButtonDown(0)) {
+                if(implementUserTouchOther != null) {
+				    Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+				    RaycastHit rayHit ;
+	                if (Physics.Raycast(ray, out rayHit, Mathf.Infinity))
+	                {
+					    if (implementUserTouchOther.arr_exceptionObjectsName.Contains(rayHit.collider.name) == false)
 	                    {
 	                        this.OnTouchOther();
 	                    }
-					}
-					else {
-						this.OnTouchOther();
-					}
-				}
-				
-                if (touch.phase == TouchPhase.Ended) {
-                    this.OnTouchEnded();
+				    }
+				    else {
+					    this.OnTouchOther();
+				    }
                 }
-            }
-        }
-        else if (Application.platform == RuntimePlatform.WindowsEditor) {
-            if (Input.GetMouseButtonUp(0)) {
-                this.OnTouchEnded();
-            }
-			
-			if(Input.GetMouseButtonDown(0)) {
-				Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-				RaycastHit rayHit ;
-                if (Physics.Raycast(ray, out rayHit, Mathf.Infinity))
-                {
-					if (arr_exceptionObjectsName.Contains(rayHit.collider.name) == false)
-                    {
-                        this.OnTouchOther();
-                    }
-				}
-				else {
-					this.OnTouchOther();
-				}
 			}
-        }
+	    }
 	}
 
 	#region <!-- On Mouse Events.

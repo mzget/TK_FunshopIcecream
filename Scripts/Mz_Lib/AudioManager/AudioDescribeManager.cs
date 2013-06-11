@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class AudioDescribeManager : MonoBehaviour {
 
@@ -18,4 +19,12 @@ public class AudioDescribeManager : MonoBehaviour {
     {
         this.audio.PlayOneShot(sound);
     }
+}
+
+[System.Serializable]
+public class ExtendAudioDescribeData
+{
+    public Dictionary<string, AudioClip> dict_audios = new Dictionary<string,AudioClip>();
+
+    public ExtendAudioDescribeData() { }
 }

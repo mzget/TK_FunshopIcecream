@@ -7,11 +7,14 @@ public class TakeawayIcecreamWithBanana : ProductAssemble {
     protected override void Start()
     {
         base.Start();
+		
+		if(this.sprite == null)
+			this.sprite = this.gameObject.GetComponent<tk2dSprite>();
 
         IngredientController.Instance.banana.active_event += Handle_banana_active_event;
     }
 
-	void Handle_banana_active_event (object sender, IngredientBeh.HandleNameArgs e)
+	internal void Handle_banana_active_event (object sender, IngredientBeh.HandleNameArgs e)
 	{
         IngredientController.Instance.banana.active_event -= Handle_banana_active_event;
 		
@@ -34,6 +37,7 @@ public class TakeawayIcecreamWithBanana : ProductAssemble {
         product = GoodsFactory.Instance.GetGoods(productName);
         product.gameObject.name = productName;
         product.transform.position = this.transform.position;
+		product.transform.localScale = new Vector3(1.5f, 1.5f, 1);
         product._canDragaable = true;
         product.costs = Shop.Instance.goodDataStore.dict_FoodDatabase[productName].costs;
         product.destroyObj_Event += product.Handle_DestroyProduct_Event;

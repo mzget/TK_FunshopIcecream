@@ -31,7 +31,7 @@ public class Shop : Mz_BaseScene {
 			if(instance == null) {
 				GameObject main = GameObject.FindGameObjectWithTag("GameController");
 				instance = main.GetComponent<Shop>();
-			}	
+			}
 			
 			return instance; 
 		}
@@ -42,10 +42,12 @@ public class Shop : Mz_BaseScene {
 	private const string BASE_ORDER_ITEM_NORMAL = "Order_BaseItem";
 	private const string BASE_ORDER_ITEM_COMPLETE = "Order_BaseItem_complete";
 
-	public Transform shop_background;
+    public Transform shop_background;
+    public Transform midLeft_anchor;
     public GameObject bakeryShop_backgroup_group;
 	public ShopTutor shopTutor;
-    public ExtendAudioDescribeData audioDescriptionData = new ExtendAudioDescribeData();
+    public ExtendAudioDescribeData merchandiseAudioDescribe = new ExtendAudioDescribeData();
+    public tk2dTextMesh merchandiseTextmesh;
 	public CharacterAnimationManager TK_animationManager;
 	public GoodsFactory goodFactory;
     public GameObject freshyFreeze_obj;
@@ -110,6 +112,10 @@ public class Shop : Mz_BaseScene {
     private GameObject cash_obj;
 	private tk2dSprite cash_sprite;
     private GameObject packagingInstance;
+	private GameObject bigGlass_prefab;
+	private GameObject glass_prefab;
+	private GameObject cup_prefab;
+	private GameObject disk_prefab;
 
     //<!-- Core data
     public enum GamePlayState { 
@@ -157,10 +163,9 @@ public class Shop : Mz_BaseScene {
         if (handler != null)
             handler(null, e);
     }
-    public static List<int> NewItem_IDs = new List<int>();
-    public class NewItemEventArgs : EventArgs
-    {
-        public int item_id;
+    public static List<string> NewItem_name = new List<string>();
+    public class NewItemEventArgs : EventArgs {
+        public string itemName;
     };
 
 
@@ -181,6 +186,8 @@ public class Shop : Mz_BaseScene {
 		if(icecreamTank == null)
 			Debug.LogError("IcecreamTankBeh is null plase assingn icecreamTank variable");
 		
+		StartCoroutine_Auto(this.InitializeExternalfactor());
+		
         yield return StartCoroutine(this.InitailizeSceneObject());
 
         overBeh.gameObject.SetActive(true);
@@ -189,12 +196,9 @@ public class Shop : Mz_BaseScene {
 
     private IEnumerator InitailizeSceneObject()
     {	
-		StartCoroutine_Auto(this.InitializeExternalfactor());
-		StartCoroutine_Auto(this.InitializeCanSellGoodslist());
+		yield return StartCoroutine_Auto(this.InitializeCanSellGoodslist());
 		// Debug can sell list.
         Debug.Log("CanSellGoodLists.Count : " + CanSellGoodLists.Count + " :: " + "NumberOfCansellItem.Count : " + Name_Of_CanSellItem.Count);
-
-		yield return null;
 
 		close_button.SetActive(true);
     }
@@ -209,7 +213,11 @@ public class Shop : Mz_BaseScene {
         StartCoroutine_Auto(this.InitializeObjectAnimation());
 
         packaging_obj_prefab = Resources.Load(Const_info.Packages_ResourcePath + "Packages_Sprite", typeof(GameObject)) as GameObject;
-
+		bigGlass_prefab = Resources.Load(Const_info.FOOD_SOLUTION_PATH + "Beverage", typeof(GameObject)) as GameObject;
+		glass_prefab = Resources.Load(Const_info.FOOD_SOLUTION_PATH + "IcecreamSundae", typeof(GameObject)) as GameObject;
+		cup_prefab = Resources.Load(Const_info.FOOD_SOLUTION_PATH + "TakeawayIcecream", typeof(GameObject)) as GameObject;
+		disk_prefab = Resources.Load(Const_info.FOOD_SOLUTION_PATH + "BNN_SS", typeof(GameObject)) as GameObject;
+		
         yield return 0;
     }
 
@@ -219,13 +227,46 @@ public class Shop : Mz_BaseScene {
 		iTween.MoveTo(slidingDoor, iTween.Hash("position", new Vector3(0, 200, -20), "islocal", true, "time", 1f, "easetype", iTween.EaseType.linear));
 				
         nullCustomer_event += Handle_nullCustomer_event;
-		OnNullCustomer_event(EventArgs.Empty);
+        OnNullCustomer_event(EventArgs.Empty);
+		
+		//<!- Check newItem.
+//        this.NoticeUserWhenHaveNewItem();
 
         if (Mz_StorageManage._HasNewGameEvent == false) {
 			Destroy(shopTutor.greeting_textmesh);
 			shopTutor = null;
 		}
     }
+
+    #region <@-- New item available for sell notification.
+
+    private List<GameObject> list_newItemUI_obj = new List<GameObject>();
+    public void NoticeUserWhenHaveNewItem()
+    {
+        if (Shop.NewItem_name.Count != 0)
+        {
+            haveNewItem_event += Handle_haveNewItem_event;
+            this.OnHaveNewItem_event(new NewItemEventArgs() { itemName = NewItem_name[0], });
+            haveNewItem_event -= Handle_haveNewItem_event;
+        }
+    }
+    void Handle_haveNewItem_event(object sender, NewItemEventArgs e)
+    {
+        GameObject newItem_UI = Instantiate(Resources.Load("Base_newitemUI", typeof(GameObject))) as GameObject;
+        list_newItemUI_obj.Add(newItem_UI);
+
+        newItem_UI.transform.parent = midLeft_anchor;
+        newItem_UI.transform.localPosition = new Vector3(-16f, 80f, -1f);
+
+        Transform item = newItem_UI.transform.Find("newItem");
+        tk2dSprite item_sprite = item.GetComponent<tk2dSprite>();
+        item_sprite.spriteId = item_sprite.GetSpriteIdByName(e.itemName);
+
+        NewItemButtonBeh newItem_button = newItem_UI.GetComponent<NewItemButtonBeh>();
+        newItem_button.newItemName = e.itemName;
+    }
+
+    #endregion
     
 	private IEnumerator SceneInitializeAudio()
 	{
@@ -245,7 +286,7 @@ public class Shop : Mz_BaseScene {
     private const string PATH_OF_APPRECIATE_CLIP = "AudioClips/AppreciateClips/";
     private const string PATH_OF_THANKS_CLIP = "AudioClips/ThanksClips/";
 	private const string PATH_OF_NOTIFICATION_CLIP = "AudioClips/Notifications/";
-    private IEnumerator ReInitializeAudioClipData()
+    IEnumerator ReInitializeAudioClipData()
     {
         description_clips.Clear();
         if (Main.Mz_AppLanguage.appLanguage == Main.Mz_AppLanguage.SupportLanguage.TH)
@@ -300,14 +341,15 @@ public class Shop : Mz_BaseScene {
 
     private void ReInitializingMerchandiseNameAudio()
     {
-        audioDescriptionData.merchandiseNameDescribes = new AudioClip[goodDataStore.dict_FoodDatabase.Count];
+        /* <@-- mzget 2013-6-11.
+        merchandiseAudioDescribe.audios = new AudioClip[goodDataStore.dict_FoodDatabase.Count];
 
         if (Main.Mz_AppLanguage.appLanguage == Main.Mz_AppLanguage.SupportLanguage.EN)
         {
             for (int i = 0; i < goodDataStore.dict_FoodDatabase.Count; i++)
             {
                 GoodDataStore.FoodMenuList foodName = (GoodDataStore.FoodMenuList)i;
-                audioDescriptionData.merchandiseNameDescribes[i] = Resources.Load(PATH_OF_MERCHANDISC_CLIP + "EN/" + foodName.ToString(), typeof(AudioClip)) as AudioClip;
+                merchandiseAudioDescribe.audios[i] = Resources.Load(PATH_OF_MERCHANDISC_CLIP + "EN/" + foodName.ToString(), typeof(AudioClip)) as AudioClip;
             }
         }
         else if (Main.Mz_AppLanguage.appLanguage == Main.Mz_AppLanguage.SupportLanguage.TH)
@@ -315,12 +357,32 @@ public class Shop : Mz_BaseScene {
 			for (int i = 0; i < goodDataStore.dict_FoodDatabase.Count; i++)
             {
                 GoodDataStore.FoodMenuList foodName = (GoodDataStore.FoodMenuList)i;
-                audioDescriptionData.merchandiseNameDescribes[i] = Resources.Load(PATH_OF_MERCHANDISC_CLIP + "TH/" + foodName.ToString(), typeof(AudioClip)) as AudioClip;
+                merchandiseAudioDescribe.audios[i] = Resources.Load(PATH_OF_MERCHANDISC_CLIP + "TH/" + foodName.ToString(), typeof(AudioClip)) as AudioClip;
+            }
+        }
+         * */
+
+        if (Main.Mz_AppLanguage.appLanguage == Main.Mz_AppLanguage.SupportLanguage.EN)
+        {
+            for (int i = 0; i < goodDataStore.dict_FoodDatabase.Count; i++)
+            {
+                GoodDataStore.FoodMenuList foodName = (GoodDataStore.FoodMenuList)i;
+                var temp = Resources.Load(PATH_OF_MERCHANDISC_CLIP + "EN/" + foodName.ToString(), typeof(AudioClip)) as AudioClip;
+                merchandiseAudioDescribe.dict_audios.Add(foodName.ToString(), temp);
+            }
+        }
+        else if (Main.Mz_AppLanguage.appLanguage == Main.Mz_AppLanguage.SupportLanguage.TH)
+        {
+            for (int i = 0; i < goodDataStore.dict_FoodDatabase.Count; i++)
+            {
+                GoodDataStore.FoodMenuList foodName = (GoodDataStore.FoodMenuList)i;
+                var temp = Resources.Load(PATH_OF_MERCHANDISC_CLIP + "TH/" + foodName.ToString(), typeof(AudioClip)) as AudioClip;
+                merchandiseAudioDescribe.dict_audios.Add(foodName.ToString(), temp);
             }
         }
     }
 
-    private IEnumerator InitializeGameEffect()
+    IEnumerator InitializeGameEffect()
     {
         if (gameEffectManager == null) {
             this.gameObject.AddComponent<GameEffectManager>();
@@ -359,7 +421,7 @@ public class Shop : Mz_BaseScene {
 		yield return 0;
 	}
 	
-	private IEnumerator InitializeCanSellGoodslist()
+	IEnumerator InitializeCanSellGoodslist()
 	{
 		if(Mz_StorageManage.Username == string.Empty) {
             // init name of can sell item list.
@@ -671,8 +733,24 @@ public class Shop : Mz_BaseScene {
 	private void CreateNoticeUpgradeShopEvent ()
 	{
 		GameObject upgradeShop_button = Instantiate(Resources.Load("Tutor_Objs/NoticeUpgradeButton", typeof(GameObject))) as GameObject;
-		upgradeShop_button.transform.position = new Vector3(40f, -75f, -3.5f);
+		upgradeShop_button.transform.position = new Vector3(40f, -75f, -5f);
 		upgradeShop_button.name = "NoticeUpgradeButton";
+
+        Mz_GuiButtonBeh buttonBeh = upgradeShop_button.GetComponent<Mz_GuiButtonBeh>();
+        buttonBeh.click_event += (object sender, EventArgs e) => {
+            if (Application.isLoadingLevel == false && _onDestroyScene == false) {
+                _onDestroyScene = true;
+                base.extendsStorageManager.SaveDataToPermanentMemory();
+                this.PreparingToCloseShop();
+
+                Mz_LoadingScreen.LoadSceneName = SceneNames.Sheepbank.ToString();
+                Application.LoadLevel(SceneNames.LoadingScene.ToString());
+
+                return;
+            }
+            else
+                return;
+        };
 		
 		audioDescribe.PlayOnecSound(description_clips[8]);
 		
@@ -836,7 +914,7 @@ public class Shop : Mz_BaseScene {
         if (Mz_StorageManage._HasNewGameEvent)
         {
 			iTween.MoveTo(baseOrderUI_Obj.gameObject, 
-			              iTween.Hash("position", new Vector3(-60f, 25f, -12f), "islocal", true, "time", .5f, "easetype", iTween.EaseType.spring));
+			              iTween.Hash("position", new Vector3(-65f, 25f, -12f), "islocal", true, "time", .5f, "easetype", iTween.EaseType.spring));
 			
             if (shopTutor.currentTutorState == ShopTutor.TutorStatus.AcceptOrders) {
                 this.CreateAcceptOrdersTutorEvent();
@@ -848,7 +926,7 @@ public class Shop : Mz_BaseScene {
 		}
 		else {
 			iTween.MoveTo(baseOrderUI_Obj.gameObject, 
-		              iTween.Hash("position", new Vector3(-60f, 25f, -12f), "islocal", true, "time", .5f, "easetype", iTween.EaseType.spring));
+		              iTween.Hash("position", new Vector3(-65f, 25f, -12f), "islocal", true, "time", .5f, "easetype", iTween.EaseType.spring));
 		}
 
 		yield return new WaitForFixedUpdate();
@@ -864,13 +942,14 @@ public class Shop : Mz_BaseScene {
 	}
 
 	IEnumerator CollapseOrderingGUI ()
-	{
+    {
+        iTween.MoveTo(baseOrderUI_Obj.gameObject,
+                  iTween.Hash("position", new Vector3(-60f, -200f, 0f), "islocal", true, "time", 0.5f, "easetype", iTween.EaseType.easeInBack));
+        merchandiseTextmesh.gameObject.SetActive(false);
+
         if (Mz_StorageManage._HasNewGameEvent)
         {
 			base.SetActivateTotorObject(false);
-            
-			iTween.MoveTo(baseOrderUI_Obj.gameObject,
-                      iTween.Hash("position", new Vector3(-60f, -200f, 0f), "islocal", true, "time", 0.5f, "easetype", iTween.EaseType.linear));
 
             if (shopTutor.currentTutorState == ShopTutor.TutorStatus.AcceptOrders)
             {
@@ -893,14 +972,10 @@ public class Shop : Mz_BaseScene {
 				this.CreateBillingTutorEvent();
 			}
         }
-        else
-        {
-            iTween.MoveTo(baseOrderUI_Obj.gameObject,
-                      iTween.Hash("position", new Vector3(-60f, -200f, 0f), "islocal", true, "time", 0.5f, "easetype", iTween.EaseType.linear));
-
+        else {
             yield return new WaitForSeconds(0.5f);
 
-            darkShadowPlane.active = false;
+            darkShadowPlane.SetActive(false);
             foreach (var item in arr_orderingItems)
             {
                 iTween.Pause(item.gameObject);
@@ -922,7 +997,7 @@ public class Shop : Mz_BaseScene {
 			greetingMessage_ObjGroup.SetActive(true);
             greetingMessage_ObjGroup.transform.localPosition = new Vector3(0,0,-12);
 			plane_darkShadow.SetActive(true);
-			iTween.ScaleTo(greetingMessage_ObjGroup, iTween.Hash("x", 1.25f, "y", 1.25f, "time", 0.5f, "easetype", iTween.EaseType.easeOutSine));
+			iTween.ScaleTo(greetingMessage_ObjGroup, iTween.Hash("x", 1.3f, "y", 1.3f, "time", 0.5f, "easetype", iTween.EaseType.easeOutSine));
 		}
 		else {
 			iTween.ScaleTo(greetingMessage_ObjGroup, iTween.Hash("x", 0f, "y", 0f, "time", 0.5f, "easetype", iTween.EaseType.easeInExpo,
@@ -1068,6 +1143,7 @@ public class Shop : Mz_BaseScene {
 			
             Destroy(shopTutor.greeting_textmesh);
             shopTutor.goaway_button_obj.SetActive(true);
+			shopTutor.greeting_textSprite.SetActive(true);
             shopTutor = null;
             darkShadowPlane.transform.position += Vector3.forward * 2f;
 
@@ -1206,94 +1282,102 @@ public class Shop : Mz_BaseScene {
         else if (currentGamePlayState == GamePlayState.Ordering) {
             #region <@-- GamePlayState.Ordering.
 
-            if (nameInput == GoodDataStore.FoodMenuList.Strawberry_ChocolateSundae.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Strawberry_ChocolateSundae]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Mint_StrawberrySundae.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Mint_StrawberrySundae]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Strawberry_StrawberrySundae.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Strawberry_StrawberrySundae]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Coffee_StrawberrySundae.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Coffee_StrawberrySundae]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Coffee_StrawberrySundae.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Coffee_StrawberrySundae]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Coffee_ChocolateSundae.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Coffee_ChocolateSundae]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Vanilla_StrawberrySundae.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Vanilla_StrawberrySundae]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Strawberry_StrawberrySundae.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Strawberry_StrawberrySundae]);
-            else if (nameInput == GoodDataStore.FoodMenuList.ChocolateChip_ChocolateSundae.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.ChocolateChip_ChocolateSundae]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Cola.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Cola]);
-            else if (nameInput == GoodDataStore.FoodMenuList.StrawberryMilkShake.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.StrawberryMilkShake]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Lemon_ChocolateSundae.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Lemon_ChocolateSundae]);
-            else if (nameInput == GoodDataStore.FoodMenuList.FruitPunch.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.FruitPunch]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Greentea_ChocolateSundae.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Greentea_ChocolateSundae]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Chocolate_ChocolateSundae.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Chocolate_ChocolateSundae]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Lemon_StrawberrySundae.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Lemon_StrawberrySundae]);
-            else if (nameInput == GoodDataStore.FoodMenuList.ChocolateChip_StrawberrySundae.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.ChocolateChip_StrawberrySundae]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Greentea_StrawberrySundae.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Greentea_StrawberrySundae]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Mint_ChocolateSundae.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Mint_ChocolateSundae]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Orange_ChocolateSundae.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Orange_ChocolateSundae]);
-            else if (nameInput == GoodDataStore.FoodMenuList.BringCherry_ChocolateSundae.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.BringCherry_ChocolateSundae]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Vanilla_ChocolateSundae.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Vanilla_ChocolateSundae]);
-            else if (nameInput == GoodDataStore.FoodMenuList.IcecreamFloat.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.IcecreamFloat]);
-            else if (nameInput == GoodDataStore.FoodMenuList.Orange_StrawberrySundae.ToString())
-                audioDescribe.PlayOnecWithOutStop(audioDescriptionData.merchandiseNameDescribes[(int)GoodDataStore.FoodMenuList.Orange_StrawberrySundae]);
-            else
+            foreach (string item in goodDataStore.dict_FoodDatabase.Keys)
             {
-                switch (nameInput)
-                {
-				case "OK_button":
-					StartCoroutine(this.CollapseOrderingGUI());
-					break;
-				case "Goaway_button":
-					currentCustomer.PlayRampage_animation();
-					StartCoroutine(this.ExpelCustomer());
-					break;
-				case "OrderingIcon": StartCoroutine(this.ShowOrderingGUI());
-					break;
-				default:
-					break;
+                if(nameInput == item) {
+                    audioDescribe.PlayOnecSound(merchandiseAudioDescribe.dict_audios[item]);
+                    merchandiseTextmesh.gameObject.SetActive(true);
+                    merchandiseTextmesh.text = item.Replace('_', ' ');
+                    merchandiseTextmesh.Commit();
                 }
-
-				if (nameInput == manualManager.name) {
-					this.manualManager.OnActiveCookbook();
-					currentGamePlayState = GamePlayState.DisplayCookbook;
-					return;
-                }
-				else if(nameInput == billingMachine.name) {
-                    if (Mz_StorageManage._HasNewGameEvent)
-                    {
-						base.SetActivateTotorObject(false);
-					}
-					
-					audioEffect.PlayOnecSound(audioEffect.calc_clip);
-					billingMachine.animation.Play(billingMachine_animState.name);
-					StartCoroutine_Auto(CheckingUnityAnimationComplete.ICheckAnimationComplete(billingMachine.animation, billingMachine_animState.name, null, string.Empty));
-					
-					EventHandler handle = null;
-					handle = (object sender, EventArgs e) => {	
-						this.CheckingGoodsObjInTray(string.Empty);
-						CheckingUnityAnimationComplete.TargetAnimationComplete_event -= handle;
-					};	
-					CheckingUnityAnimationComplete.TargetAnimationComplete_event += handle;
-				}
             }
+            /*
+            if (nameInput == GoodDataStore.FoodMenuList.Strawberry_ChocolateSundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(merchandiseAudioDescribe.audios[(int)GoodDataStore.FoodMenuList.Strawberry_ChocolateSundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Mint_StrawberrySundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(merchandiseAudioDescribe.audios[(int)GoodDataStore.FoodMenuList.Mint_StrawberrySundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Strawberry_StrawberrySundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(merchandiseAudioDescribe.audios[(int)GoodDataStore.FoodMenuList.Strawberry_StrawberrySundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Coffee_StrawberrySundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(merchandiseAudioDescribe.audios[(int)GoodDataStore.FoodMenuList.Coffee_StrawberrySundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Coffee_StrawberrySundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(merchandiseAudioDescribe.audios[(int)GoodDataStore.FoodMenuList.Coffee_StrawberrySundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Coffee_ChocolateSundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(merchandiseAudioDescribe.audios[(int)GoodDataStore.FoodMenuList.Coffee_ChocolateSundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Vanilla_StrawberrySundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(merchandiseAudioDescribe.audios[(int)GoodDataStore.FoodMenuList.Vanilla_StrawberrySundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Strawberry_StrawberrySundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(merchandiseAudioDescribe.audios[(int)GoodDataStore.FoodMenuList.Strawberry_StrawberrySundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.ChocolateChip_ChocolateSundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(merchandiseAudioDescribe.audios[(int)GoodDataStore.FoodMenuList.ChocolateChip_ChocolateSundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Cola.ToString())
+                audioDescribe.PlayOnecWithOutStop(merchandiseAudioDescribe.audios[(int)GoodDataStore.FoodMenuList.Cola]);
+            else if (nameInput == GoodDataStore.FoodMenuList.StrawberryMilkShake.ToString())
+                audioDescribe.PlayOnecWithOutStop(merchandiseAudioDescribe.audios[(int)GoodDataStore.FoodMenuList.StrawberryMilkShake]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Lemon_ChocolateSundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(merchandiseAudioDescribe.audios[(int)GoodDataStore.FoodMenuList.Lemon_ChocolateSundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.FruitPunch.ToString())
+                audioDescribe.PlayOnecWithOutStop(merchandiseAudioDescribe.audios[(int)GoodDataStore.FoodMenuList.FruitPunch]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Greentea_ChocolateSundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(merchandiseAudioDescribe.audios[(int)GoodDataStore.FoodMenuList.Greentea_ChocolateSundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Chocolate_ChocolateSundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(merchandiseAudioDescribe.audios[(int)GoodDataStore.FoodMenuList.Chocolate_ChocolateSundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Lemon_StrawberrySundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(merchandiseAudioDescribe.audios[(int)GoodDataStore.FoodMenuList.Lemon_StrawberrySundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.ChocolateChip_StrawberrySundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(merchandiseAudioDescribe.audios[(int)GoodDataStore.FoodMenuList.ChocolateChip_StrawberrySundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Greentea_StrawberrySundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(merchandiseAudioDescribe.audios[(int)GoodDataStore.FoodMenuList.Greentea_StrawberrySundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Mint_ChocolateSundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(merchandiseAudioDescribe.audios[(int)GoodDataStore.FoodMenuList.Mint_ChocolateSundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Orange_ChocolateSundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(merchandiseAudioDescribe.audios[(int)GoodDataStore.FoodMenuList.Orange_ChocolateSundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.BringCherry_ChocolateSundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(merchandiseAudioDescribe.audios[(int)GoodDataStore.FoodMenuList.BringCherry_ChocolateSundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Vanilla_ChocolateSundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(merchandiseAudioDescribe.audios[(int)GoodDataStore.FoodMenuList.Vanilla_ChocolateSundae]);
+            else if (nameInput == GoodDataStore.FoodMenuList.IcecreamFloat.ToString())
+                audioDescribe.PlayOnecWithOutStop(merchandiseAudioDescribe.audios[(int)GoodDataStore.FoodMenuList.IcecreamFloat]);
+            else if (nameInput == GoodDataStore.FoodMenuList.Orange_StrawberrySundae.ToString())
+                audioDescribe.PlayOnecWithOutStop(merchandiseAudioDescribe.audios[(int)GoodDataStore.FoodMenuList.Orange_StrawberrySundae]);
+             **/
+            switch (nameInput)
+            {
+                case "OK_button":
+				StartCoroutine(this.CollapseOrderingGUI());
+                break;
+			    case "Goaway_button":
+				    currentCustomer.PlayRampage_animation();
+				    StartCoroutine(this.ExpelCustomer());
+				    break;
+			    case "OrderingIcon": StartCoroutine(this.ShowOrderingGUI());
+				    break;
+			    default:
+				    break;
+            }
+
+			if (nameInput == manualManager.name) {
+				this.manualManager.OnActiveCookbook();
+				currentGamePlayState = GamePlayState.DisplayCookbook;
+				return;
+            }
+			else if(nameInput == billingMachine.name) {
+                if (Mz_StorageManage._HasNewGameEvent)
+                {
+					base.SetActivateTotorObject(false);
+				}
+					
+				audioEffect.PlayOnecSound(audioEffect.calc_clip);
+				billingMachine.animation.Play(billingMachine_animState.name);
+				StartCoroutine_Auto(CheckingUnityAnimationComplete.ICheckAnimationComplete(billingMachine.animation, billingMachine_animState.name, null, string.Empty));
+					
+				EventHandler handle = null;
+				handle = (object sender, EventArgs e) => {	
+					this.CheckingGoodsObjInTray(string.Empty);
+					CheckingUnityAnimationComplete.TargetAnimationComplete_event -= handle;
+				};	
+				CheckingUnityAnimationComplete.TargetAnimationComplete_event += handle;
+			}
 
             #endregion
         }
@@ -1484,8 +1568,7 @@ public class Shop : Mz_BaseScene {
 
                 StartCoroutine(this.PlayApologizeCustomer(apologize_clip[0]));
             }
-            else if (this.foodTrayBeh.goodsOnTray_List.Count != currentCustomer.customerOrderRequire.Count)
-            {
+            else if (this.foodTrayBeh.goodsOnTray_List.Count != currentCustomer.customerOrderRequire.Count) {
                 Debug.Log("food on tray != customer require.");
 
                 StartCoroutine(this.PlayApologizeCustomer(apologize_clip[1]));
@@ -1495,12 +1578,9 @@ public class Shop : Mz_BaseScene {
                 List<CustomerOrderRequire> list_goodsTemp = new List<CustomerOrderRequire>();
                 Food temp_goods = null;
 
-                for (int i = 0; i < currentCustomer.customerOrderRequire.Count; i++)
-                {
-                    foreach (GoodsBeh item in this.foodTrayBeh.goodsOnTray_List)
-                    {
-                        if (item.name == currentCustomer.customerOrderRequire[i].food.name)
-                        {
+                for (int i = 0; i < currentCustomer.customerOrderRequire.Count; i++) {
+                    foreach (GoodsBeh item in this.foodTrayBeh.goodsOnTray_List) {
+                        if (item.name == currentCustomer.customerOrderRequire[i].food.name) {
                             temp_goods = currentCustomer.customerOrderRequire[i].food;
                         }
                     }
@@ -1532,6 +1612,14 @@ public class Shop : Mz_BaseScene {
 
 		audioEffect.PlayOnecWithOutStop(base.soundEffect_clips[0]);
 		slidingDoor.SetActive(true);
+
+        // Clear new item list.
+        foreach (var item in list_newItemUI_obj)
+        {
+            Destroy(item.gameObject);
+        }
+        NewItem_name.Clear();
+
 		iTween.MoveTo(slidingDoor, iTween.Hash("position", new Vector3(0, 0, -20), "islocal", true, "time", 1f, "easetype", iTween.EaseType.linear,
 			"oncomplete", "RollingDoor_close", "oncompletetarget", this.gameObject));
     }
@@ -1592,30 +1680,34 @@ public class Shop : Mz_BaseScene {
     {
         if (p_name == "Glass") { 
         // create sundae icecream.
-			GameObject newAssemble = Instantiate(Resources.Load(Const_info.FOOD_SOLUTION_PATH + "IcecreamSundae", typeof(GameObject))) as GameObject;
+			GameObject newAssemble = Instantiate(glass_prefab) as GameObject;
 			napery.productAssemble = newAssemble.GetComponent<ProductAssemble>();
             napery.productAssemble.transform.position = napery.instance.transform.position + new Vector3(0, 0, -5);
+			napery.productAssemble.transform.localScale = new Vector3(1.5f, 1.5f, 1);
 			napery.productAssemble._canDragaable = true;
         }
         else if (p_name == "Cup") {
             // create icecream take away.
-            GameObject newAssemble = Instantiate(Resources.Load(Const_info.FOOD_SOLUTION_PATH + "TakeawayIcecream", typeof(GameObject))) as GameObject;
+            GameObject newAssemble = Instantiate(cup_prefab) as GameObject;
             napery.productAssemble = newAssemble.GetComponent<ProductAssemble>();
             napery.productAssemble.transform.position = napery.instance.transform.position + new Vector3(0, 0, -5);
+			napery.productAssemble.transform.localScale = new Vector3(1.5f, 1.5f, 1);
             napery.productAssemble._canDragaable = true;
         }
         else if (p_name == "Disk") { 
         // create banana split icecream.
-            GameObject newAssemble = Instantiate(Resources.Load(Const_info.FOOD_SOLUTION_PATH + "BNN_SS", typeof(GameObject))) as GameObject;
+            GameObject newAssemble = Instantiate(disk_prefab) as GameObject;
             napery.productAssemble = newAssemble.GetComponent<ProductAssemble>();
             napery.productAssemble.transform.position = napery.instance.transform.position + new Vector3(0, 0, -5);
+			napery.productAssemble.transform.localScale = new Vector3(1.5f, 1.5f, 1);
             napery.productAssemble._canDragaable = true;
         }
 		else if(p_name == "BigGlass") {
             // Create beverage assemble.
-            GameObject newAssemble = Instantiate(Resources.Load(Const_info.FOOD_SOLUTION_PATH + "Beverage", typeof(GameObject))) as GameObject;
+            GameObject newAssemble = Instantiate(bigGlass_prefab) as GameObject;
             napery.productAssemble = newAssemble.GetComponent<ProductAssemble>();
             napery.productAssemble.transform.position = napery.instance.transform.position + new Vector3(0, 0, -5);
+			napery.productAssemble.transform.localScale = new Vector3(1.5f, 1.5f, 1);
             napery.productAssemble._canDragaable = true;
 		}
     }

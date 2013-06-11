@@ -20,5 +20,7 @@ public class Mz_OnGUIManager : MonoBehaviour {
 		}
 		
 		viewPort_rect = new Rect(((Screen.width / 2) - (midcenterGroup_rect.width / 2)), 0, midcenterGroup_rect.width, Main.FixedGameHeight);
+		
+		Debug.Log("Current screen resolution == " + Screen.width + ":" + Screen.height);
 	}
 }

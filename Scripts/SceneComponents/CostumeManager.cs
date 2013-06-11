@@ -507,6 +507,9 @@ public class CostumeManager : MonoBehaviour {
 					sceneController.TK_animationManager.PlayEyeAnimation(CharacterAnimationManager.NameAnimationsList.agape);
                 }
             }
+            else {
+                characterCustomization.ChangeClotheAtRuntime(index);
+            }
         }
     }
 	
@@ -535,6 +538,10 @@ public class CostumeManager : MonoBehaviour {
 					sceneController.TK_animationManager.PlayEyeAnimation(CharacterAnimationManager.NameAnimationsList.agape);
 				}
 			}
+            else
+            {
+                characterCustomization.ChangeHatAtRuntime(id);
+            }
 		}
 	}
 

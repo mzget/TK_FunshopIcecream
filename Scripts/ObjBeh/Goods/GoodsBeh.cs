@@ -58,7 +58,7 @@ public class GoodsBeh : ObjectsBeh {
 	    cursorRay = new Ray(this.transform.position, Vector3.forward);		
 		Debug.DrawRay(cursorRay.origin, Vector3.forward, Color.red);
 		
-		if(Physics.Raycast(cursorRay, out hit, 1000f)) 
+		if(Physics.Raycast(cursorRay, out hit, Mathf.Infinity)) 
         {
 			if(hit.collider.name == Shop.Instance.binBeh.name) {			
 				if(this._isDropObject == true) {
@@ -116,7 +116,7 @@ public class GoodsBeh : ObjectsBeh {
     {
         base.OnTouchBegan();
 
-        this.transform.localScale = new Vector3(1.5f, 1.5f, 1);
+        this.transform.localScale = new Vector3(1.75f, 1.75f, 1);
         baseScene.audioEffect.PlayOnecWithOutStop(baseScene.audioEffect.pop_clip);
     }
 

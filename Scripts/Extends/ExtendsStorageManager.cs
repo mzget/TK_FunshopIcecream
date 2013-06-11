@@ -102,12 +102,11 @@ public class ExtendsSaveManager : Mz_StorageManage
 
     private void LoadNewItemArrayData()
     {
-        int[] array = PlayerPrefsX.GetIntArray(SaveSlot + KEY_LIST_NEWITEM);
-        Shop.NewItem_IDs.Clear();
-        foreach (var item in array)
-        {
-            if (item != 255)
-                Shop.NewItem_IDs.Add(item);
+        string[] array = PlayerPrefsX.GetStringArray(SaveSlot + KEY_LIST_NEWITEM);
+        Shop.NewItem_name.Clear();
+        foreach (var item in array) {
+            if (item != string.Empty)
+                Shop.NewItem_name.Add(item);
         }
     }
 
@@ -331,19 +330,16 @@ public class ExtendsSaveManager : Mz_StorageManage
 
     private void SaveNewItemArray()
     {
-        if (Shop.NewItem_IDs.Count != 0)
-        {
-            int[] temp_arr = Shop.NewItem_IDs.ToArray();
-            PlayerPrefsX.SetIntArray(Mz_StorageManage.SaveSlot + KEY_LIST_NEWITEM, temp_arr);
+        if (Shop.NewItem_name.Count != 0) {
+            string[] temp_arr = Shop.NewItem_name.ToArray();
+            PlayerPrefsX.SetStringArray(SaveSlot + KEY_LIST_NEWITEM, temp_arr);
         }
-        else
-        {
-            PlayerPrefsX.SetIntArray(SaveSlot + KEY_LIST_NEWITEM, new int[] { 255, });
+        else {
+            PlayerPrefsX.SetStringArray(SaveSlot + KEY_LIST_NEWITEM, new string[] { string.Empty });
         }
     }
 	
-    private void SaveCanAlimentPetList()
-    {
+    private void SaveCanAlimentPetList() {
         int[] array_temp = UpgradeOutsideManager.CanAlimentPet_id_list.ToArray();
         PlayerPrefsX.SetIntArray(SaveSlot + KEY_CAN_ALIMENT_PET_LIST, array_temp);
     }

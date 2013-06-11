@@ -17,10 +17,8 @@ public class Startup : Mz_BaseScene {
 		}
 	}
 	
-	protected override void Initialization ()
-	{
-		base.Initialization ();
-		
+	private new void Initialization ()
+	{		
 		Mz_OnGUIManager.CalculateViewportScreen();
 
 		Mz_StorageManage.Language_id = PlayerPrefs.GetInt(Mz_StorageManage.KEY_SYSTEM_LANGUAGE, 0);
@@ -30,20 +28,20 @@ public class Startup : Mz_BaseScene {
 	private void AutomaticSetup_QualitySetting() {
 		#if UNITY_IPHONE && !UNITY_EDITOR
 
-		if(iPhone.generation == iPhoneGeneration.iPad1Gen ||
+		if(iPhone.generation == iPhoneGeneration.iPad1Gen || iPhone.generation == iPhoneGeneration.iPodTouch4Gen ||
 		   iPhone.generation == iPhoneGeneration.iPhone3G || iPhone.generation == iPhoneGeneration.iPhone3GS) {
-			QualitySettings.SetQualityLevel(0);	
+			QualitySettings.SetQualityLevel(0);
 			Application.targetFrameRate = 30;
 		}
 		else {
 			QualitySettings.SetQualityLevel(1);
-			Application.targetFrameRate = 60;
+			Application.targetFrameRate = 30;
 		}
 
 		#elif UNITY_ANDROID && !UNITY_EDITOR
 
-		if(Screen.height <= 480) {			
-			QualitySettings.SetQualityLevel(0);	
+		if(Screen.height <= 480) {
+			QualitySettings.SetQualityLevel(0);
 			Application.targetFrameRate = 30;
 		}
 		else {
@@ -57,11 +55,5 @@ public class Startup : Mz_BaseScene {
 		Application.targetFrameRate = 60;
 
 		#endif
-	}
-	
-	// Update is called once per frame
-	protected override void Update ()
-	{
-		base.Update ();
 	}
 }

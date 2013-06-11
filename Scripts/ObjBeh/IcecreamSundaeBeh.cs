@@ -37,7 +37,7 @@ public class IcecreamSundaeBeh : ProductAssemble {
 			item.active_event += Handle_WaitForScoopIcecreamEvent;
 		}
 		
-		base.productPos = new Vector3(-40, 35, 1);
+		base.productPos = new Vector3(-40f, 38f, 1f);
 	}
 
 	void Handle_WaitForScoopIcecreamEvent (object sender, IngredientBeh.HandleNameArgs e)
@@ -158,7 +158,7 @@ public class IcecreamSundaeBeh : ProductAssemble {
 		product = GoodsFactory.Instance.GetGoods(goodsName);
         product.gameObject.name = goodsName;
 		product.transform.position = productPos;
-		product.transform.localScale = new Vector3(1.25f, 1.25f, 1);
+		product.transform.localScale = new Vector3(1.6f, 1.6f, 1f);
 		product._canDragaable = true;
         product.costs = Shop.Instance.goodDataStore.dict_FoodDatabase[goodsName].costs;
 		product.destroyObj_Event += product.Handle_DestroyProduct_Event;

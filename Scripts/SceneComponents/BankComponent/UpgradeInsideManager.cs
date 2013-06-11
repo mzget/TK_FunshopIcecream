@@ -51,7 +51,7 @@ public class UpgradeInsideManager : MonoBehaviour {
     };
     private int[,] secondPage_prices = new int[,] {
         {300, 300, 500, 500},
-        {1400, 1200, 500, 100},
+        {500, 150, 1200, 100},
     };
     private int[,] thirdPage_prices = new int[,] {
         {150, 200, 1600, 700},
@@ -889,22 +889,24 @@ public class UpgradeInsideManager : MonoBehaviour {
         else if (currentPageIndex == 2)
             Mz_StorageManage.AccountBalance -= thirdPage_prices[e.I, e.J];
 		
-        if (e.AdditionalParams != string.Empty)
-        {
-            switch (e.AdditionalParams)
-            {
-                default:
-                    break;
-            }
-        }
+        //if (e.AdditionalParams != string.Empty)
+        //{
+        //    switch (e.AdditionalParams)
+        //    {
+        //        default:
+        //            break;
+        //    }
+        //}
 
         upgradeButton_Sprites[e.I, e.J].spriteId = UnActiveUpgradeButtonID;
         ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Add(e.Item_name);
-		CalculateObjectsToDisplay();
+        Shop.NewItem_name.Add(e.Item_name);
         
 		sceneController.ManageAvailabelMoneyBillBoard();
         sceneController.gameEffectManager.Create2DSpriteAnimationEffect(GameEffectManager.BLOOMSTAR_EFFECT_PATH, upgradeButton_Objs[e.I, e.J].transform);
         sceneController.audioEffect.PlayOnecWithOutStop(sceneController.audioEffect.longBring_clip);
+
+        CalculateObjectsToDisplay();
 	}
 
 	void PlaySoundWarning ()

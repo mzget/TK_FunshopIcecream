@@ -38,11 +38,21 @@ public class OvenBeh : Base_ObjectBeh {
     protected override void Start()
     {
         base.Start();
-
-		banana_covered_chocolate_button.click_event += Handle_bananacoverChocolate_buttonDown_event; 
-
-        StartCoroutine_Auto(this.CreateIcecreamCake());
+		StartCoroutine_Auto(this.IE_Initialize());
     }
+
+	protected IEnumerator IE_Initialize ()
+	{		
+		banana_covered_chocolate_button.click_event += Handle_bananacoverChocolate_buttonDown_event; 
+        yield return StartCoroutine_Auto(this.CreateIcecreamCake());
+		
+		base.implementUserTouchOther = new ImplementUserTouchOther();
+		base.implementUserTouchOther.arr_exceptionObjectsName.Add(this.name);
+		base.implementUserTouchOther.arr_exceptionObjectsName.Add(banana_covered_chocolate_button.gameObject.name);
+		foreach (var item in cake_products) {
+			base.implementUserTouchOther.arr_exceptionObjectsName.Add(item.gameObject.name);
+		}
+	}
 
     private IEnumerator CreateIcecreamCake()
     {
@@ -75,6 +85,7 @@ public class OvenBeh : Base_ObjectBeh {
 			banana_covered_choco_product = GoodsFactory.Instance.GetGoods(goodname);
 			banana_covered_choco_product.gameObject.name = goodname;
 			banana_covered_choco_product.transform.position = banana_covered_chocolate_button.transform.position + new Vector3(0, 8, -5);
+            banana_covered_choco_product.transform.localScale = new Vector3(1.5f, 1.5f, 1);
 			banana_covered_choco_product._canDragaable = true;
 			banana_covered_choco_product.costs = Shop.Instance.goodDataStore.dict_FoodDatabase[goodname].costs;
 			banana_covered_choco_product.destroyObj_Event += banana_covered_choco_product.Handle_DestroyProduct_Event;
@@ -121,6 +132,8 @@ public class OvenBeh : Base_ObjectBeh {
 
 			//<!-- Setting original position.
 			obj.originalPosition = obj.transform.position;
+            obj.transform.localScale = new Vector3(1.5f, 1.5f, 1);
+            obj.SetOriginTransform(obj.originalPosition, obj.transform.localScale);
 
             cake_products[obj.index_of_instance] = null;
             StartCoroutine_Auto(this.CreateIcecreamCake());
@@ -146,12 +159,6 @@ public class OvenBeh : Base_ObjectBeh {
 
         StartCoroutine_Auto(this.CreateIcecreamCake());
     }
-
-	// Update is called once per frame
-    protected override void Update()
-    {
-        base.Update();
-    }
 	
 	protected override void OnTouchDown ()
 	{
@@ -166,6 +173,16 @@ public class OvenBeh : Base_ObjectBeh {
 			}
 		}
  		else if(currentAnimationState == OvenAnimationState.open) { 
+			oven_spriteAnimate.Play(oven_close_clipName);
+			currentAnimationState = OvenAnimationState.close;
+		}
+	}
+	
+	protected override void OnTouchOther ()
+	{
+		base.OnTouchOther ();
+		//<!-- Close oven when user touch other.
+		if(currentAnimationState == OvenAnimationState.open) { 
 			oven_spriteAnimate.Play(oven_close_clipName);
 			currentAnimationState = OvenAnimationState.close;
 		}

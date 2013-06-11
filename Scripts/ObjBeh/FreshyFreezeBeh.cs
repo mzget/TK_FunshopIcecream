@@ -7,6 +7,7 @@ public class FreshyFreezeBeh : ProductAssemble {
 	private StateBeh currentStateBeh = StateBeh.idle;
 	
 	public Mz_GuiButtonBeh popup;
+	public tk2dAnimatedSprite cleaning_layer;
 	public tk2dAnimatedSprite layer1;
 	public tk2dAnimatedSprite layer2;
 	public tk2dAnimatedSprite layer3;
@@ -37,15 +38,22 @@ public class FreshyFreezeBeh : ProductAssemble {
     {
         this.Initialize();
 		
-        base.arr_exceptionObjectsName.Add(this.name);
-        base.arr_exceptionObjectsName.Add(popup.name);
-        popup.click_event += Handle_popup_click_event;
+		base.implementUserTouchOther = new ImplementUserTouchOther();
+        base.implementUserTouchOther.arr_exceptionObjectsName.Add(this.name);
+        base.implementUserTouchOther.arr_exceptionObjectsName.Add(popup.name);
+        
+		popup.click_event += Handle_popup_click_event;
 	}
 
 	private void Handle_popup_click_event (object sender, System.EventArgs e)
 	{
+		this.cleaning_layer.gameObject.SetActive(true);
+		this.cleaning_layer.Play();
+		this.cleaning_layer.animationCompleteDelegate = (sprite, clipId) => {
+			this.cleaning_layer.gameObject.SetActive(false);
+			this.Initialize();
+		};
         this.RemoveEventsHandle();
-		this.Initialize();
 		this.SetActiveClearPopup(false);
 	}
 
@@ -58,6 +66,7 @@ public class FreshyFreezeBeh : ProductAssemble {
         layer5.gameObject.SetActive(false);
         layer6.gameObject.SetActive(false);
         layer7.gameObject.SetActive(false);
+		cleaning_layer.gameObject.SetActive(false);
         layer1.clipId = layer1.GetClipIdByName("Step1");
         layer1.Play();
         layer1.StopAndResetFrame();

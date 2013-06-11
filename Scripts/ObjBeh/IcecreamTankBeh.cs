@@ -37,6 +37,14 @@ public class IcecreamTankBeh : ObjectsBeh {
     protected override void Start()
     {
         base.Start();
+		
+		base.implementUserTouchOther = new ImplementUserTouchOther();
+		base.implementUserTouchOther.arr_exceptionObjectsName.Add(this.name);
+		base.implementUserTouchOther.arr_exceptionObjectsName.Add(lidTankAnimation.gameObject.name);
+		foreach (string block in dict_nameOfIcecreamBlock.Keys) {
+			base.implementUserTouchOther.arr_exceptionObjectsName.Add(block);
+		}
+		
 		SetActivateScoopIcecream(false);
 		StartCoroutine_Auto(this.IE_SetActiveIcecreamBlock());
     }
@@ -98,4 +106,14 @@ public class IcecreamTankBeh : ObjectsBeh {
 		this.SetActivateTank();
         base.OnTouchDown();
     }
+	
+	protected override void OnTouchOther ()
+	{
+		base.OnTouchOther ();
+		
+		if(_isOpen == true) {
+			lidTankAnimation.Play("CloseTank");
+			_isOpen = false;
+		}
+	}
 }

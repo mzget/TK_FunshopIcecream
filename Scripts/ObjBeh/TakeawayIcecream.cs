@@ -150,7 +150,7 @@ public class TakeawayIcecream : ProductAssemble {
         product = GoodsFactory.Instance.GetGoods(productName);
         product.gameObject.name = productName;
         product.transform.position = productPos;
-		product.transform.localScale = new Vector3(1.25f, 1.25f, 1);
+		product.transform.localScale = new Vector3(1.5f, 1.5f, 1);
         product._canDragaable = true;
         product.costs = Shop.Instance.goodDataStore.dict_FoodDatabase[productName].costs;
         product.destroyObj_Event += product.Handle_DestroyProduct_Event;
@@ -182,6 +182,12 @@ public class TakeawayIcecream : ProductAssemble {
 
             //<!-- Setting original position.
             obj.originalPosition = obj.transform.position;
+			
+			TakeawayIcecreamWithBanana get_Type = obj.gameObject.GetComponent<TakeawayIcecreamWithBanana>();
+			if(get_Type != null) {
+				get_Type.enabled = false;
+                IngredientController.Instance.banana.active_event -= get_Type.Handle_banana_active_event;
+			}
 
             product = null;
         }
@@ -191,11 +197,6 @@ public class TakeawayIcecream : ProductAssemble {
             obj.transform.position = obj.originalPosition;
         }
     }
-	
-	// Update is called once per frame
-	protected override void Update () {
-		base.Update();
-	}
 	
 	public override void OnDispose ()
 	{

@@ -345,6 +345,10 @@ public class MainMenu : Mz_BaseScene {
             this.characterAnimationManager.PlayEyeAnimation(CharacterAnimationManager.NameAnimationsList.agape);
             audioEffect.PlayOnecWithOutStop(audioEffect.wrong_Clip);
 	    }
+        else if(username == "ClearStorage") {
+            username = string.Empty;
+            PlayerPrefs.DeleteAll();
+        }
         else
         {
             _isDuplicateUsername = false;
@@ -439,10 +443,6 @@ public class MainMenu : Mz_BaseScene {
         PlayerPrefsX.SetBool(Mz_StorageManage.SaveSlot + Mz_StorageManage.KEY_IS_USER_PLAY_TUTOR, true);
 
         Debug.Log("Store new player data complete.");
-
-        base.extendsStorageManager.LoadSaveDataToGameStorage();
-
-        this.LoadSceneTarget();
     }
 
     private void LoadSceneTarget() {
@@ -461,20 +461,19 @@ public class MainMenu : Mz_BaseScene {
         if (_toSaveGame) 
 		{   
             //<!-- Full save game slot. Show notice message.
-            string message = string.Empty;			
-            //message = "���͡��ͧ����ͧ��� ����ź��������� ��зѺ���¢���������";
+            string message = string.Empty;
             message = "Select Data Slot To Replace New Data";
 			GUI.Box(notification_Rect, message, notification_TextboxStyle);
 		}
 
-        GUI.BeginGroup(showSaveGameSlot_GroupRect, "", GUI.skin.box);
+        GUI.BeginGroup(showSaveGameSlot_GroupRect);
         {
             if (_toSaveGame)			
             {
                 /// Display To Save Username.
 //                GUI.Box(textbox_header_rect, username, mainmenu_Skin.textField);
                 /// Choose SaveGame Slot for replace new data.
-                if (GUI.Button(slot_1Rect, new GUIContent(PlayerPrefs.GetString(1 + Mz_StorageManage.KEY_USERNAME), "button"), GUI.skin.button))
+                if (GUI.Button(slot_1Rect, new GUIContent(PlayerPrefs.GetString(1 + Mz_StorageManage.KEY_USERNAME))))
                 {
                     audioEffect.PlayOnecWithOutStop(audioEffect.buttonDown_Clip);
 
@@ -482,7 +481,7 @@ public class MainMenu : Mz_BaseScene {
 //                    SaveNewPlayer();
 					StartCoroutine(ShowInitializeNewShop());
                 }
-                else if (GUI.Button(slot_2Rect, new GUIContent(PlayerPrefs.GetString(2 + Mz_StorageManage.KEY_USERNAME), "button"), GUI.skin.button))
+                else if (GUI.Button(slot_2Rect, new GUIContent(PlayerPrefs.GetString(2 + Mz_StorageManage.KEY_USERNAME))))
                 {
                     audioEffect.PlayOnecWithOutStop(audioEffect.buttonDown_Clip);
 
@@ -490,7 +489,7 @@ public class MainMenu : Mz_BaseScene {
 //				    SaveNewPlayer();
 					StartCoroutine(ShowInitializeNewShop());
                 }
-                else if (GUI.Button(slot_3Rect, new GUIContent(PlayerPrefs.GetString(3 + Mz_StorageManage.KEY_USERNAME), "button"), GUI.skin.button))
+                else if (GUI.Button(slot_3Rect, new GUIContent(PlayerPrefs.GetString(3 + Mz_StorageManage.KEY_USERNAME))))
                 {
                     audioEffect.PlayOnecWithOutStop(audioEffect.buttonDown_Clip);
 
@@ -500,10 +499,9 @@ public class MainMenu : Mz_BaseScene {
                 }
             }
             else {
-//                string headerText = "";
-//                headerText = "���͡��ͧ����ͧ���������������¤�Ѻ";
+//              string headerText = "";
 //				headerText = "Select Data Slot";
-//                GUI.Box(textbox_header_rect, headerText, mainmenu_Skin.textField);
+//              GUI.Box(textbox_header_rect, headerText, mainmenu_Skin.textField);
                 /// Choose SaveGame Slot for Load Save Data.
                 string slot_1 = string.Empty;
                 string slot_2 = string.Empty;
@@ -533,7 +531,7 @@ public class MainMenu : Mz_BaseScene {
                     audioEffect.PlayOnecWithOutStop(audioEffect.buttonDown_Clip);
 
                     if(player_2 != string.Empty) {
-                        Mz_StorageManage.SaveSlot =2;
+                        Mz_StorageManage.SaveSlot = 2;
                         base.extendsStorageManager.LoadSaveDataToGameStorage();
                         this.LoadSceneTarget();
                     }
@@ -554,7 +552,6 @@ public class MainMenu : Mz_BaseScene {
         }
         GUI.EndGroup();
     }
-	
 	
 	void Handle_Tk_news_button_buttonDown_event (object sender, EventArgs e)
 	{
@@ -619,7 +616,7 @@ public class MainMenu : Mz_BaseScene {
                 return;
             }
         }
-        else if(newgame_Group.gameObject.active) {
+        else if(newgame_Group.gameObject.activeSelf) {
             //<!-- GUIState.showNewGame -->
             if(nameInput == back_button.name) {
                 StartCoroutine(ShowMainMenu());
@@ -628,12 +625,12 @@ public class MainMenu : Mz_BaseScene {
                 this.CheckUserNameFormInput();
             }
         }
-        else if(loadgame_Group.gameObject.active) {
+        else if(loadgame_Group.gameObject.activeSelf) {
             if(nameInput == back_button.name) {
                 StartCoroutine(ShowMainMenu());
             }
         }
-        else if(initializeNewGame_Group.gameObject.active) 
+        else if(initializeNewGame_Group.gameObject.activeSelf) 
 		{
             if(nameInput == back_button.name) {
                 StartCoroutine(ShowMainMenu());
@@ -642,7 +639,9 @@ public class MainMenu : Mz_BaseScene {
 				if(shopName != "") {
                     this.characterAnimationManager.RandomPlayGoodAnimation();
                     audioEffect.PlayOnecWithOutStop(audioEffect.correct_Clip);
-                	this.SaveNewPlayer();
+                    this.SaveNewPlayer();
+                    base.extendsStorageManager.LoadSaveDataToGameStorage();
+                    this.LoadSceneTarget();
 				}
                 else{
                     this.characterAnimationManager.PlayEyeAnimation(CharacterAnimationManager.NameAnimationsList.agape);
