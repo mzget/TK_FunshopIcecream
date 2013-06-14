@@ -172,13 +172,15 @@ public class Shop : Mz_BaseScene {
     #endregion
 
     // Use this for initialization
-	IEnumerator Start () {				
+    IEnumerator Start()
+    {
+        darkShadowPlane.SetActive(true);
+        calculator_group_instance.SetActive(false);
+        manualManager.manualCookbook.SetActive(false);	
         foodTrayBeh = ScriptableObject.CreateInstance<FoodTrayBeh>();
         goodDataStore = new GoodDataStore();
         napery = ScriptableObject.CreateInstance<NaperyBeh>();
 		goodFactory = GoodsFactory.Instance;
-        calculator_group_instance.SetActive(false);
-		manualManager.manualCookbook.SetActive(false);
 
 		if(ingredientController == null) {
 			this.ingredientController = this.gameObject.GetComponent<IngredientController>();
@@ -772,7 +774,7 @@ public class Shop : Mz_BaseScene {
 		}
 		else {
 			StartCoroutine(CreateCustomer());
-			darkShadowPlane.SetActive(false);
+//			darkShadowPlane.SetActive(false);
 			close_button.gameObject.SetActive(true);
 		}
 	}
@@ -933,7 +935,7 @@ public class Shop : Mz_BaseScene {
 		
 		this.CheckingGoodsObjInTray(GoodsBeh.ClassName);
 		currentCustomer.customerOrderingIcon_Obj.active = false;
-		darkShadowPlane.active = true;
+		darkShadowPlane.SetActive(true);
 		
 		foreach (var item in arr_orderingItems) {
 			iTween.Resume(item.gameObject);
@@ -1639,6 +1641,7 @@ public class Shop : Mz_BaseScene {
     {
 		Debug.Log(Shop.WarningMessageToSeeManual);
         audioDescribe.PlayOnecSound(description_clips[9]);
+        manualManager.ActiveManualAnimation();
     }
 
 	internal void CreateDeductionsCoin (int p_value)

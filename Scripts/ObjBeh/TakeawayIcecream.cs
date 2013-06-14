@@ -32,18 +32,18 @@ public class TakeawayIcecream : ProductAssemble {
 		banana.gameObject.SetActive(false);
 	    base.productPos = this.transform.position;
 		
-		foreach (BlockIcecreamBeh item in IcecreamTankBeh.Instance.block_icecreams) {
+		foreach (IngredientBeh item in IcecreamTankBeh.Instance.block_icecreams) {
 			item.active_event += Handle_BlockIcecream_active_event;
 		}
 	}
 
 	void Handle_BlockIcecream_active_event (object sender, IngredientBeh.HandleNameArgs e)
 	{
-		foreach (BlockIcecreamBeh item in IcecreamTankBeh.Instance.block_icecreams) {
+		foreach (IngredientBeh item in IcecreamTankBeh.Instance.block_icecreams) {
 			item.active_event -= Handle_BlockIcecream_active_event;
 		}
 		
-		BlockIcecreamBeh icecream = sender as BlockIcecreamBeh;
+		IngredientBeh icecream = sender as IngredientBeh;
 		icecream_id = IcecreamTankBeh.Instance.dict_nameOfIcecreamBlock[icecream.gameObject.name];
 		
 		step1_icecream.gameObject.SetActive(true);
@@ -202,7 +202,7 @@ public class TakeawayIcecream : ProductAssemble {
 	{
 		base.OnDispose ();
 		
-		foreach (BlockIcecreamBeh item in IcecreamTankBeh.Instance.block_icecreams) {
+		foreach (IngredientBeh item in IcecreamTankBeh.Instance.block_icecreams) {
 			item.active_event -= Handle_BlockIcecream_active_event;
 		}
         step1_icecream.animationCompleteDelegate -= Handle_step1_icecream_playcomplete;

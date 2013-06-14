@@ -26,7 +26,7 @@ public class Startup : Mz_BaseScene {
 	}
 	
 	private void AutomaticSetup_QualitySetting() {
-		#if UNITY_IPHONE && !UNITY_EDITOR
+		#if UNITY_IOS && !UNITY_EDITOR
 
 		if(iPhone.generation == iPhoneGeneration.iPad1Gen || iPhone.generation == iPhoneGeneration.iPodTouch4Gen ||
 		   iPhone.generation == iPhoneGeneration.iPhone3G || iPhone.generation == iPhoneGeneration.iPhone3GS) {

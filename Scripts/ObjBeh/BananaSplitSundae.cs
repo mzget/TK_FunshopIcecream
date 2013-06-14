@@ -55,7 +55,7 @@ public class BananaSplitSundae : ProductAssemble {
 			item.active_event -= Handle_BlockIcecream_active_event;
 		}
 		
-		BlockIcecreamBeh block = sender as BlockIcecreamBeh;
+		IngredientBeh block = sender as IngredientBeh;
 		
 		int i = IcecreamTankBeh.Instance.dict_nameOfIcecreamBlock[block.name];
 		currentSelectedIcecream = icecream_clipNames[i];

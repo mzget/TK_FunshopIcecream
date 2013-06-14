@@ -15,16 +15,26 @@ public class IngredientBeh : ObjectsBeh {
 	} 
 	
 	public event EventHandler<HandleNameArgs> active_event;
-	protected virtual void Onactive_event (HandleNameArgs e)
+	protected void Onactive_event (HandleNameArgs e)
 	{
-		var handler = active_event;
-		if (handler != null)
-			handler (this, e);
+		if (active_event != null)
+            active_event(this, e);
+		else {
+			Shop.Instance.WarningPlayerToSeeManual();
+		}
+	}
+	
+	protected override void OnTouchBegan ()
+	{
+		base.OnTouchBegan ();
+		
+		this.transform.localScale = originalScale * 1.5f;
 	}
 
 	protected override void OnTouchDown ()
 	{
 		this.Onactive_event(new HandleNameArgs() { eventName = this.name, });
+		
 		if(animatedSprite != null) { 
 			animatedSprite.Play();
             animatedSprite.animationCompleteDelegate += (sprite, clipid) => { 
@@ -33,5 +43,12 @@ public class IngredientBeh : ObjectsBeh {
         }
 		
 		base.OnTouchDown ();
+	}
+	
+	protected override void OnTouchEnded ()
+	{
+		base.OnTouchEnded ();
+		
+		this.transform.localScale = originalScale;
 	}
 }

@@ -1,26 +1,31 @@
 using UnityEngine;
 using System.Collections;
 
+/// <summary>
+/// Configuration character costumes at here.
+/// </summary>
 public class CharacterCustomization : MonoBehaviour {
 
-    public const int AvailableClothesNumber = 15;
-    public string[] arr_clothesNameSpec = new string[AvailableClothesNumber] {
+    public const int AvailableClothesNumber = 18;
+    public readonly string[] arr_clothesNameSpec = new string[AvailableClothesNumber] {
         "Clothe_0001", "Clothe_0002", "Clothe_0003", 
-         "Clothe_0004", "Clothe_0005", "Clothe_0006",
-          "Clothe_0007", "Clothe_0008", "Clothe_0009",
-           "Clothe_0010", "Clothe_0011", "Clothe_0012",  
-            "Clothe_0013", "Clothe_0014", "Clothe_0015",
+		"Clothe_0004", "Clothe_0005", "Clothe_0006",
+		"Clothe_0007", "Clothe_0008", "Clothe_0009",
+		"Clothe_0010", "Clothe_0011", "Clothe_0012",  
+		"Clothe_0013", "Clothe_0014", "Clothe_0015",
+		"Clothe_0016", "Clothe_0017", "Clothe_0018",
     };
-	public Vector3[] arr_clothesOffsetPos = new Vector3[AvailableClothesNumber] {
+	public readonly Vector3[] arr_clothesOffsetPos = new Vector3[AvailableClothesNumber] {
 		Vector3.zero,		Vector3.zero,		Vector3.zero,
 		Vector3.zero,		Vector3.zero,		Vector3.zero,
 		Vector3.zero,		Vector3.right,		Vector3.zero,
 		Vector3.zero,		Vector3.zero,		Vector3.zero,
 		Vector3.zero,		Vector3.up,         Vector3.up * 0.5f,
+		Vector3.zero,		Vector3.zero,		Vector3.zero,
 	};
 	
-    public const int AvailableHatNumber = 23;
-    public string[] arrHatNameSpec = new string[AvailableHatNumber] {
+    public const int AvailableHatNumber = 26;
+    public readonly string[] arrHatNameSpec = new string[AvailableHatNumber] {
 		"Hat_0001", "Hat_0002", "Hat_0003", 
         "Hat_0004", "Hat_0005", "Hat_0006", 
         "Hat_0007", "Hat_0008", "Hat_0009", 
@@ -28,32 +33,19 @@ public class CharacterCustomization : MonoBehaviour {
         "Hat_0013", "Hat_0014", "Hat_0015", 
         "Hat_0016", "Hat_0017", "Hat_0018", 
         "Hat_0019", "Hat_0020", "Hat_0021", 
-        "Hat_0022", "Hat_0023", 
+        "Hat_0022", "Hat_0023", "Hat_0024",
+        "Hat_0025", "Hat_0026", 
     };
 	private Vector3[] arr_hatLocalPos = new Vector3[AvailableHatNumber] {
-		Vector3.zero,
-		Vector3.zero,
-		Vector3.zero,	
-		Vector3.zero,
-		Vector3.zero,
-		Vector3.zero, // 5
-		Vector3.right,
-		new Vector3(0, -.095f, -4.5f),	
-		Vector3.down * 6,
-		new Vector3(2.5f, -7f, 0f),	
-		new Vector3(0.8f, -7f, 0),	// 10.
-		new Vector3(0.85f, -6f, 0),
-		new Vector3(1f, 0.8f, 0),	
-		Vector3.zero,
-		new Vector3(-2f, -5.5f, 0),
-		Vector3.down * 22,	        // 15.
-		Vector3.zero,	 
-		Vector3.zero,
-		Vector3.zero,
-		Vector3.zero,	
-		Vector3.right * 3.9f, // 20.
-		Vector3.zero,
-		Vector3.zero,
+		Vector3.zero, Vector3.zero, Vector3.zero,	
+		Vector3.zero, Vector3.zero, Vector3.zero, // 5
+		Vector3.right, new Vector3(0, -.095f, -4.5f), Vector3.down * 6,
+		new Vector3(2.5f, -7f, 0f),	new Vector3(0.8f, -7f, 0), new Vector3(0.85f, -6f, 0),
+		new Vector3(1f, 0.8f, 0), Vector3.zero, new Vector3(-2f, -5.5f, 0),
+		Vector3.down * 22, Vector3.zero, Vector3.zero,
+		Vector3.zero, Vector3.zero,	Vector3.right * 3.9f, // 20.        
+		Vector3.zero, Vector3.zero, Vector3.right * 3f,	
+		Vector3.zero, Vector3.zero, 
 	};
 
     public tk2dSprite TK_clothe;
@@ -66,6 +58,7 @@ public class CharacterCustomization : MonoBehaviour {
 			TK_clothe.gameObject.active = false;
 		else 
 			this.ChangeClotheAtRuntime(Mz_StorageManage.TK_clothe_id);
+
 		if(Mz_StorageManage.TK_hat_id == 255)
 			TK_hat.gameObject.active = false;
 		else
@@ -73,9 +66,7 @@ public class CharacterCustomization : MonoBehaviour {
 	}
 	
 	// Update is called once per frame
-	void Update () {
-	
-	}
+	void Update () { }
 	
 	private Vector3 originalClothePosition = new Vector3(0, -30, -3);
     public void ChangeClotheAtRuntime(int arr_index) {

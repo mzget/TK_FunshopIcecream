@@ -115,22 +115,22 @@ public class Dressing : Mz_BaseScene {
                 costomeManager.GotoNextPage();
                 break;
             case "Low0_1":
-                costomeManager.HaveChooseClotheCommand(nameInput);
+                costomeManager.HaveChooseCostumeCommand(nameInput);
                 break;
             case "Low0_2": 
-                costomeManager.HaveChooseClotheCommand(nameInput);
+                costomeManager.HaveChooseCostumeCommand(nameInput);
                 break;
             case "Low0_3":
-                costomeManager.HaveChooseClotheCommand(nameInput);
+                costomeManager.HaveChooseCostumeCommand(nameInput);
                 break;
             case "Low1_1": 
-                costomeManager.HaveChooseClotheCommand(nameInput);
+                costomeManager.HaveChooseCostumeCommand(nameInput);
                 break;
             case "Low1_2": 
-                costomeManager.HaveChooseClotheCommand(nameInput);
+                costomeManager.HaveChooseCostumeCommand(nameInput);
                 break;
             case "Low1_3":
-                costomeManager.HaveChooseClotheCommand(nameInput);
+                costomeManager.HaveChooseCostumeCommand(nameInput);
                 break;
             case "Yes_button":
                 costomeManager.UserConfirmTransaction();

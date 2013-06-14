@@ -16,10 +16,11 @@ public class IcecreamTankBeh : ObjectsBeh {
 	public const int AMOUNT_OF_ICECREAM_PRODUCT = 10;
     
     public tk2dAnimatedSprite lidTankAnimation;
+	public Mz_GuiButtonBeh lidTankButtonBeh;
 	private bool _isOpen = false;
 	
 	public tk2dAnimatedSprite[] scoop_icecreams;
-	public BlockIcecreamBeh[] block_icecreams;
+	public IngredientBeh[] block_icecreams;
 	internal Dictionary<string, int> dict_nameOfIcecreamBlock = new Dictionary<string, int>() {
 		{"strawberry_icecream_block", 0}, 
 		{"chocolate_icecream_block", 1},
@@ -47,6 +48,13 @@ public class IcecreamTankBeh : ObjectsBeh {
 		
 		SetActivateScoopIcecream(false);
 		StartCoroutine_Auto(this.IE_SetActiveIcecreamBlock());
+		
+		lidTankButtonBeh.click_event += Handle_LidTankButtonBeh_click_event;
+    }
+
+    void Handle_LidTankButtonBeh_click_event (object sender, System.EventArgs e)
+    {
+		this.SetActivateTank();
     }
 	
 	private void SetActivateScoopIcecream(bool p_active) {
@@ -57,7 +65,7 @@ public class IcecreamTankBeh : ObjectsBeh {
 
 	internal IEnumerator IE_SetActiveIcecreamBlock ()
 	{
-		foreach(BlockIcecreamBeh item in block_icecreams) {
+		foreach(IngredientBeh item in block_icecreams) {
 			if(ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(item.gameObject.name) == false)
 				item.gameObject.SetActive(false);
 			else 
@@ -88,17 +96,12 @@ public class IcecreamTankBeh : ObjectsBeh {
 	{
 		Debug.Log("IcecreamTankBeh : Handle_input() : " + p_name);
 		 
-		if(p_name == "LidIcecreamTank") {
-			this.SetActivateTank();
-		}
-		else {
-			int i = dict_nameOfIcecreamBlock[p_name];
-			scoop_icecreams[i].gameObject.SetActive(true);
-			scoop_icecreams[i].Play();
-			scoop_icecreams[i].animationCompleteDelegate = (sprite, clipId) => {
-				SetActivateScoopIcecream(false);
-			};
-		}
+		int i = dict_nameOfIcecreamBlock[p_name];
+		scoop_icecreams[i].gameObject.SetActive(true);
+		scoop_icecreams[i].Play();
+		scoop_icecreams[i].animationCompleteDelegate = (sprite, clipId) => {
+			SetActivateScoopIcecream(false);
+		};
 	}
 
     protected override void OnTouchDown()

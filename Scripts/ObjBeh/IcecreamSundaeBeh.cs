@@ -33,7 +33,7 @@ public class IcecreamSundaeBeh : ProductAssemble {
 		step5.gameObject.SetActive(false);
 		step6.gameObject.SetActive(false);
 		
-		foreach (BlockIcecreamBeh item in IcecreamTankBeh.Instance.block_icecreams) {
+		foreach (IngredientBeh item in IcecreamTankBeh.Instance.block_icecreams) {
 			item.active_event += Handle_WaitForScoopIcecreamEvent;
 		}
 		
@@ -42,12 +42,12 @@ public class IcecreamSundaeBeh : ProductAssemble {
 
 	void Handle_WaitForScoopIcecreamEvent (object sender, IngredientBeh.HandleNameArgs e)
 	{		
-		foreach (BlockIcecreamBeh item in IcecreamTankBeh.Instance.block_icecreams) {
+		foreach (IngredientBeh item in IcecreamTankBeh.Instance.block_icecreams) {
 			item.active_event -= Handle_WaitForScoopIcecreamEvent;
 		}		
 		if(this == null) return; 
 		
-		BlockIcecreamBeh senderBeh = sender as  BlockIcecreamBeh;
+		IngredientBeh senderBeh = sender as  IngredientBeh;
 		
 		int i = IcecreamTankBeh.Instance.dict_nameOfIcecreamBlock[senderBeh.name];
 		currentSelectedIcecream = icecream_clipNames[i];
@@ -142,9 +142,13 @@ public class IcecreamSundaeBeh : ProductAssemble {
 		IngredientController.Instance.strawberry_fruit.active_event -= Handle_FruitActive_event;
 		IngredientController.Instance.cherry_fruit.active_event -= Handle_FruitActive_event;
 		if(this == null) return;
-
+		
+		IngredientBeh fruit = sender as IngredientBeh;
 		step6.gameObject.SetActive(true);
-		step6.Play();
+		if(fruit.name == "Cherry")
+			step6.Play("cherryFruit");
+		else if(fruit.name == "Strawberry")
+			step6.Play("strawberryFruit");
 
 		StartCoroutine_Auto(CreateProductAndDestroySelf());
 	}

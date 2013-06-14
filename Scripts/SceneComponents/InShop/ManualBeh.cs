@@ -43,9 +43,14 @@ public class ManualBeh : ObjectsBeh {
 
     internal void OnActiveCookbook()
 	{
-		baseScene.audioEffect.PlayOnecSound(baseScene.audioEffect.calc_clip);
-		this.animation.Play("ManualAnim");
+        this.ActiveManualAnimation();
         StartCoroutine_Auto(CheckingUnityAnimationComplete.ICheckAnimationComplete(this.animation, "ManualAnim", this.gameObject, "ActiveCookbookObjectGroup"));
+    }
+
+    internal void ActiveManualAnimation()
+    {
+        baseScene.audioEffect.PlayOnecSound(baseScene.audioEffect.calc_clip);
+        this.animation.Play("ManualAnim");
     }
 
     private void ActiveCookbookObjectGroup() {
