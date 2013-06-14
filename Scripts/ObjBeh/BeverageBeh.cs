@@ -20,8 +20,11 @@ public class BeverageBeh : ProductAssemble {
 	void Handle_strawberryMillShake_active_event (object sender, IngredientBeh.HandleNameArgs e)
 	{
 		IngredientController.Instance.strawberryMillShake.active_event -= Handle_strawberryMillShake_active_event;
+
+        this.transform.position = new Vector3(-93f, 14f, 0);
 		
 		glass.Play("StrawberryMillShake");
+        Shop.Instance.audioEffect.PlayOnecSound(Shop.Instance.soundEffect_clips[2]);
 		glass.animationCompleteDelegate += StrawberryMilkShakePlayComplete;
 	}
 
@@ -35,8 +38,11 @@ public class BeverageBeh : ProductAssemble {
 	void Handle_fruitPunch_active_event (object sender, IngredientBeh.HandleNameArgs e)
 	{
         IngredientController.Instance.fruitPunch.active_event -= Handle_fruitPunch_active_event;
-		
+
+        this.transform.position = new Vector3(-108f, -5f, -2f);
+
         glass.Play("FruitPunch");
+        Shop.Instance.audioEffect.PlayOnecSound(Shop.Instance.soundEffect_clips[2]);
         glass.animationCompleteDelegate += FruitPunchPlayComplete;
 	}
 
@@ -49,31 +55,17 @@ public class BeverageBeh : ProductAssemble {
     void Handle_cola_active_event(object sender, IngredientBeh.HandleNameArgs e) {        
         IngredientController.Instance.cola.active_event -= Handle_cola_active_event;
 
+        this.transform.position = new Vector3(-78f, 30f, 0);
+
         glass.Play("Cola");
+        Shop.Instance.audioEffect.PlayOnecSound(Shop.Instance.soundEffect_clips[2]);
 		glass.animationCompleteDelegate += ColaPlayComplete;
-//		glass.animationCompleteDelegate += Handle_IcecreamFloat;
     }
 
     private void ColaPlayComplete(tk2dAnimatedSprite sprite, int clipId) {    
         glass.animationCompleteDelegate -= ColaPlayComplete;
 
         StartCoroutine_Auto(this.CreateProductAndDestroySelf("Cola"));
-    }
-
-	void Handle_IcecreamFloat (tk2dAnimatedSprite sprite, int clipId)
-	{ 
-		glass.animationCompleteDelegate -= Handle_IcecreamFloat;
-		IcecreamTankBeh.Instance.block_icecreams[2].active_event += Handle_VanillaIcecream_active_event;
-	}
-
-    void Handle_VanillaIcecream_active_event (object sender, IngredientBeh.HandleNameArgs e)
-    {
-		IcecreamTankBeh.Instance.block_icecreams[2].active_event -= Handle_VanillaIcecream_active_event;
-		
-		glass.Play("IcecreamFloat");
-		glass.animationCompleteDelegate = (sprite, clipId) => { 
-			StartCoroutine_Auto(this.CreateProductAndDestroySelf("IcecreamFloat"));
-		};
     }
 
 	IEnumerator CreateProductAndDestroySelf (string productName)
@@ -135,8 +127,6 @@ public class BeverageBeh : ProductAssemble {
         IngredientController.Instance.cola.active_event -= Handle_cola_active_event;
         IngredientController.Instance.fruitPunch.active_event -= Handle_fruitPunch_active_event;
         IngredientController.Instance.strawberryMillShake.active_event -= Handle_strawberryMillShake_active_event;
-		glass.animationCompleteDelegate -= Handle_IcecreamFloat;
-        IcecreamTankBeh.Instance.block_icecreams[2].active_event -= Handle_VanillaIcecream_active_event;
 
         glass.animationCompleteDelegate -= ColaPlayComplete;
         glass.animationCompleteDelegate -= FruitPunchPlayComplete;

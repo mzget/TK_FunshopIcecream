@@ -37,8 +37,7 @@ public class Shop : Mz_BaseScene {
 		}
 	}
 
-    public const string WarningMessageToSeeManual = "Please see a manual if you don't known how to make a food";
-	
+    private const string WarningMessageToSeeManual = "Please see a manual if you don't known how to make a food";
 	private const string BASE_ORDER_ITEM_NORMAL = "Order_BaseItem";
 	private const string BASE_ORDER_ITEM_COMPLETE = "Order_BaseItem_complete";
 
@@ -269,19 +268,7 @@ public class Shop : Mz_BaseScene {
     }
 
     #endregion
-    
-	private IEnumerator SceneInitializeAudio()
-	{
-        base.InitializeAudio();
-		
-        audioBackground_Obj.audio.clip = base.background_clip;
-        audioBackground_Obj.audio.loop = true;
-        audioBackground_Obj.audio.volume = 0.8f;
-        audioBackground_Obj.audio.Play();
-		
-		yield return null;
-	}
-
+ 
     private const string PATH_OF_DYNAMIC_CLIP = "AudioClips/GameIntroduce/Shop/";
     private const string PATH_OF_MERCHANDISC_CLIP = "AudioClips/AudioDescribe/";
     private const string PATH_OF_APOLOGIZE_CLIP = "AudioClips/ApologizeClips/";
@@ -345,7 +332,6 @@ public class Shop : Mz_BaseScene {
     {
         /* <@-- mzget 2013-6-11.
         merchandiseAudioDescribe.audios = new AudioClip[goodDataStore.dict_FoodDatabase.Count];
-
         if (Main.Mz_AppLanguage.appLanguage == Main.Mz_AppLanguage.SupportLanguage.EN)
         {
             for (int i = 0; i < goodDataStore.dict_FoodDatabase.Count; i++)
@@ -382,6 +368,18 @@ public class Shop : Mz_BaseScene {
                 merchandiseAudioDescribe.dict_audios.Add(foodName.ToString(), temp);
             }
         }
+    }
+
+    private IEnumerator SceneInitializeAudio()
+    {
+        base.InitializeAudio();
+
+        audioBackground_Obj.audio.clip = base.background_clip;
+        audioBackground_Obj.audio.loop = true;
+        audioBackground_Obj.audio.volume = 0.8f;
+        audioBackground_Obj.audio.Play();
+
+        yield return null;
     }
 
     IEnumerator InitializeGameEffect()
@@ -424,8 +422,10 @@ public class Shop : Mz_BaseScene {
 	}
 	
 	IEnumerator InitializeCanSellGoodslist()
-	{
-		if(Mz_StorageManage.Username == string.Empty) {
+    {
+        #region <!-- if username is null or name of can sell goods is null.
+
+        if (Mz_StorageManage.Username == string.Empty) {
             // init name of can sell item list.
 			Shop.Name_Of_CanSellItem.Clear();
 			foreach (string item in goodDataStore.dict_FoodDatabase.Keys) {
@@ -446,91 +446,88 @@ public class Shop : Mz_BaseScene {
 		else if(Shop.Name_Of_CanSellItem.Count == 0)
 			base.extendsStorageManager.LoadCanSellGoodsListData();
 
-        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[0].name))
-        {
+        #endregion
+
+        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[0].name)) {
             if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Strawberry_ChocolateSundae.ToString()))
                 Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Strawberry_ChocolateSundae.ToString());
 
             if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Strawberry_StrawberrySundae.ToString()))
                 Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Strawberry_StrawberrySundae.ToString());
         }
-        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[1].name))
-        {
+        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[1].name)) {
             if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Chocolate_ChocolateSundae.ToString()))
                 Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Chocolate_ChocolateSundae.ToString());
 
             if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Chocolate_StrawberrySundae.ToString()))
                 Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Chocolate_StrawberrySundae.ToString());
         }
-        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[2].name))
-        {
+        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[2].name)) {
             if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Vanilla_ChocolateSundae.ToString()))
                 Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Vanilla_ChocolateSundae.ToString());
 
             if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Vanilla_StrawberrySundae.ToString()))
                 Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Vanilla_StrawberrySundae.ToString());
         }
-        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[3].name))
-        {
+        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[3].name)) {
             if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Mint_ChocolateSundae.ToString()))
                 Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Mint_ChocolateSundae.ToString());
 
             if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Mint_StrawberrySundae.ToString()))
                 Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Mint_StrawberrySundae.ToString());
         }
-        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[4].name))
-        {
+        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[4].name)) {
             if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Greentea_ChocolateSundae.ToString()))
                 Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Greentea_ChocolateSundae.ToString());
 
             if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Greentea_StrawberrySundae.ToString()))
                 Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Greentea_StrawberrySundae.ToString());
         }
-        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[5].name))
-        {
+        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[5].name)) {
             if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Lemon_ChocolateSundae.ToString()))
                 Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Lemon_ChocolateSundae.ToString());
 
             if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Lemon_StrawberrySundae.ToString()))
                 Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Lemon_StrawberrySundae.ToString());
         }
-        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[6].name))
-        {
+        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[6].name)) {
             if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.ChocolateChip_ChocolateSundae.ToString()))
                 Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.ChocolateChip_ChocolateSundae.ToString());
 
             if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.ChocolateChip_StrawberrySundae.ToString()))
                 Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.ChocolateChip_StrawberrySundae.ToString());
         }
-        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[7].name))
-        {
+        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[7].name)) {
             if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Orange_ChocolateSundae.ToString()))
                 Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Orange_ChocolateSundae.ToString());
 
             if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Orange_StrawberrySundae.ToString()))
                 Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Orange_StrawberrySundae.ToString());
         }
-        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[8].name))
-        {
+        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[8].name)) {
             if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Coffee_ChocolateSundae.ToString()))
                 Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Coffee_ChocolateSundae.ToString());
 
             if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.Coffee_StrawberrySundae.ToString()))
                 Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Coffee_StrawberrySundae.ToString());
         }
-        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[9].name))
-        {
+        if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[9].name)) {
             if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.BringCherry_ChocolateSundae.ToString()))
                 Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.BringCherry_ChocolateSundae.ToString());
 
             if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.BringCherry_StrawberrySundae.ToString()))
                 Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.BringCherry_StrawberrySundae.ToString());
         }
-		if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains ("ColaTank")) {
+		if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains("ColaTank")) {
             ingredientController.cola.gameObject.SetActive(true);
             if (!Name_Of_CanSellItem.Contains (GoodDataStore.FoodMenuList.Cola.ToString())) {
                 Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.Cola.ToString());	
 			}
+            if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains(icecreamTank.block_icecreams[2].name)) {
+                if(!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.IcecreamFloat.ToString())) {
+                    Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.IcecreamFloat.ToString());
+                }
+            }
 		}
         if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains("FruitPunchTank")) {
             ingredientController.fruitPunch.gameObject.SetActive(true);
@@ -548,12 +545,11 @@ public class Shop : Mz_BaseScene {
         }
         if (ExtendsSaveManager.UpgradeInsideSaveData.List_of_purchased_item.Contains("FreshyFreezeIcecream")) {
             freshyFreeze_obj.SetActive(true);
-
-			if (!Name_Of_CanSellItem.Contains (GoodDataStore.FoodMenuList.FreshyFreeze_C_blueberry.ToString())) 
+			if (!Name_Of_CanSellItem.Contains (GoodDataStore.FoodMenuList.FreshyFreeze_C_blueberry.ToString()))
 				Name_Of_CanSellItem.Add (GoodDataStore.FoodMenuList.FreshyFreeze_C_blueberry.ToString());
 			if(!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.FreshyFreeze_C_cherry.ToString()))
 				Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.FreshyFreeze_C_cherry.ToString());
-            if(!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.FreshyFreeze_C_dragonfruit.ToString())) 
+            if(!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.FreshyFreeze_C_dragonfruit.ToString()))
                 Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.FreshyFreeze_C_dragonfruit.ToString());
             if (!Name_Of_CanSellItem.Contains(GoodDataStore.FoodMenuList.FreshyFreeze_C_kiwi.ToString()))
                 Name_Of_CanSellItem.Add(GoodDataStore.FoodMenuList.FreshyFreeze_C_kiwi.ToString());
@@ -762,10 +758,8 @@ public class Shop : Mz_BaseScene {
 
 	#endregion
 	
-	/// <summary>
 	/// <!-- Customer manage system.
 	/// Handle_nulls the customer_event.
-	/// </summary>
     private void Handle_nullCustomer_event(object sender, EventArgs e) {
         if (Mz_StorageManage._HasNewGameEvent)
         {
@@ -1113,7 +1107,7 @@ public class Shop : Mz_BaseScene {
         }
     }
 
-	void ShowGiveTheChangeForm () {
+	private void ShowGiveTheChangeForm () {
         giveTheChangeGUIForm_groupObj.SetActive(true);
 		darkShadowPlane.SetActive(true);
 		

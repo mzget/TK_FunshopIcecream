@@ -14,7 +14,17 @@ public class Mz_BaseScene : MonoBehaviour {
             return _instance;
         }
     }
-    public enum SceneNames { none = 0, LoadingScene = 1, MainMenu, WaitForStart, Town, Shop, Sheepbank, Dressing, DisplayReward, };
+    public enum SceneNames { 
+        none = 0,
+        LoadingScene = 1,
+        MainMenu,
+        WaitForStart,
+        Town,
+        Shop,
+        Sheepbank,
+        Dressing,
+        DisplayReward,
+    };
 	
     //<!-- Audio Manage.
     protected static bool ToggleAudioActive = true;
@@ -67,9 +77,7 @@ public class Mz_BaseScene : MonoBehaviour {
             iTween.Stop(handTutor);
 
         foreach (GameObject item in tutorDescriptions)
-        {
             item.active = activeState;
-        }
     }
 
 	#endregion

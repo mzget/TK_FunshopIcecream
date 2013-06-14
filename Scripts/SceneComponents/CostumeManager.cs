@@ -392,8 +392,7 @@ public class CostumeManager : MonoBehaviour {
 
     #region <!-- Display clothe by current page identify.
 
-    private void DisplayClothePage0 ()
-	{
+    private void DisplayClothePage0 () {
 		for (int i = 0; i < low0_Sprite.Length; i++)
 		{
 			low0_Sprite[i].spriteId = low0_Sprite[i].GetSpriteIdByName(nameClothesSpecify[i]);
@@ -427,8 +426,7 @@ public class CostumeManager : MonoBehaviour {
 			}
 		}
 	}
-    private void DisplayClothePage1()
-    {
+    private void DisplayClothePage1() {
         for (int i = 0; i < low0_Sprite.Length; i++)
         {
             low0_Sprite[i].spriteId = low0_Sprite[i].GetSpriteIdByName(nameClothesSpecify[i + 6]);
@@ -466,39 +464,36 @@ public class CostumeManager : MonoBehaviour {
             }
         }
     }
-    private void DisplayClothePage2()
-    {
-        for (int i = 0; i < low0_Sprite.Length; i++)
-        {
+    private void DisplayClothePage2() {
+        for (int i = 0; i < low0_Sprite.Length; i++) {
             low0_Sprite[i].spriteId = low0_Sprite[i].GetSpriteIdByName(nameClothesSpecify[i + 12]);
 
             costumePrice_textmesh[i].text = arr_priceOfClothesData[i + 12].ToString();
             costumePrice_textmesh[i].Commit();
 
-            if (Dressing.CanEquipClothe_list.Contains(i + 12))
-            {
-                lockKey_obj[i].SetActiveRecursively(false);
-                costumePrice_textmesh[i].gameObject.active = false;
+            if (Dressing.CanEquipClothe_list.Contains(i + 12)) {
+                lockKey_obj[i].SetActive(false);
+                costumePrice_textmesh[i].gameObject.SetActive(false);
             }
-            else
-            {
-                lockKey_obj[i].SetActiveRecursively(true);
-                costumePrice_textmesh[i].gameObject.active = true;
+            else {
+                lockKey_obj[i].SetActive(true);
+                costumePrice_textmesh[i].gameObject.SetActive(true);
             }
         }
-        for (int j = 0; j < low1_Sprite.Length; j++)
-        {
+        for (int j = 0; j < low1_Sprite.Length; j++) {
             low1_Sprite[j].spriteId = low1_Sprite[j].GetSpriteIdByName(nameClothesSpecify[j + 15]);
 
-            // Active all low 1 textmesh.
-            costumePrice_textmesh[j + 3].gameObject.active = true;
             costumePrice_textmesh[j + 3].text = arr_priceOfClothesData[j + 15].ToString();
             costumePrice_textmesh[j + 3].Commit();
 
-            //					if(Dressing.CanEquipClothe_list.Contains(j+15)) 
-            lockKey_obj[j + 3].SetActiveRecursively(false);
-            //					else
-            //						lockKey_obj[j+3].SetActiveRecursively(true);
+			if(Dressing.CanEquipClothe_list.Contains(j + 15)) {
+            	lockKey_obj[j + 3].SetActive(false);
+				costumePrice_textmesh[j + 3].gameObject.SetActive(false);
+			}
+			else {
+				lockKey_obj[j+3].SetActive(true);
+            	costumePrice_textmesh[j + 3].gameObject.SetActive(true);
+			}
         }
     }
 

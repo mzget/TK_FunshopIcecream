@@ -32,7 +32,7 @@ public class IcecreamFloatBeh : ProductAssemble {
 		StartCoroutine_Auto(CreateProductAndDestroySelf());
 	}
 	
-	IEnumerator CreateProductAndDestroySelf ()
+	IEnumerator CreateProductAndDestroySelf()
 	{
         Shop.Instance.gameEffectManager.Create2DSpriteAnimationEffect(GameEffectManager.BLOOMSTAR_EFFECT_PATH, this.transform);
         Shop.Instance.audioEffect.PlayOnecSound(Shop.Instance.audioEffect.longBring_clip);
@@ -40,8 +40,8 @@ public class IcecreamFloatBeh : ProductAssemble {
 		string goodsName = this.GetGoodsName();
 		product = GoodsFactory.Instance.GetGoods(goodsName);
         product.gameObject.name = goodsName;
-		product.SetOriginTransform(productPos, Vector3.zero);
 		product.transform.position = productPos;
+        product.transform.localScale = new Vector3(1.5f, 1.5f, 1);
 		product._canDragaable = true;
         product.costs = Shop.Instance.goodDataStore.dict_FoodDatabase[goodsName].costs;
 		product.destroyObj_Event += product.Handle_DestroyProduct_Event;

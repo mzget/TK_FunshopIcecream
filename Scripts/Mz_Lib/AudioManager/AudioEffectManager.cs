@@ -19,8 +19,7 @@ public class AudioEffectManager : MonoBehaviour {
 	public AudioClip longBring_clip;
 	public AudioClip mutter_clip;
 	public AudioClip correctBring_clip;
-	
-	
+		
 	void Awake() {
 		GameObject source = new GameObject("alternativeEffect", typeof(AudioSource));
 		source.transform.parent = this.gameObject.transform;
